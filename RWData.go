@@ -11,11 +11,9 @@ func Get[T any](key string) (T, bool) {
 	log.Print("Get ", key)
 	// 先查内存表
 	value, result := db.MemoryTree.Search(key)
-
 	if result == kv.Success {
 		return getInstance[T](value.Value)
 	}
-
 	// 查 SsTable 文件
 	if db.TableTree != nil {
 		value, result := db.TableTree.Search(key)

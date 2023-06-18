@@ -6,12 +6,6 @@ import (
 	"sync"
 )
 
-type Node struct {
-	KV    kv.Value
-	Left  *Node
-	Right *Node
-}
-
 type BST struct {
 	root  *Node
 	count int
@@ -171,27 +165,24 @@ func (t *BST) Delete(key string) (oldValue kv.Value, hasOld bool) {
 	return kv.Value{}, false
 }
 
-// GetValues 获取树中的所有元素，这是一个有序元素列表
+// GetValues 获取树中的所有元素
 func (t *BST) GetValues() (values []kv.Value) {
 	t.RLock()
 	defer t.RUnlock()
 
-	// 使用栈，而非递归，栈使用了切片，可以自动扩展大小，不必担心栈满
-	stack := InitStack(t.count)
-
-	// 从小到大获取树的元素
 	curr := t.root
+	var st []*Node
 	for {
 		if curr != nil {
-			stack.Push(curr)
+			st = append(st, curr)
 			curr = curr.Left
 		} else {
-			popNode, ok := stack.Pop()
-			if !ok {
+			if len(st) == 0 {
 				break
 			}
-			values = append(values, popNode.KV)
-			curr = popNode.Right
+			values = append(values, st[len(st)-1].KV)
+			curr = st[len(st)-1].Right
+			st = st[:len(st)-1]
 		}
 	}
 	return values

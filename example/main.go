@@ -11,10 +11,10 @@ import (
 )
 
 type Data struct {
-	num1 int64
-	num2 int64
-	num3 int64
-	s1   string
+	A int64
+	B int64
+	C int64
+	D string
 }
 
 func main() {
@@ -44,6 +44,7 @@ func query() {
 	elapse := time.Since(start)
 	fmt.Println("查找 aaaa 完成，消耗时间：", elapse)
 	fmt.Println(v)
+
 	start = time.Now()
 	v, _ = lsm.Get[Data]("zzzz")
 	elapse = time.Since(start)
@@ -52,16 +53,10 @@ func query() {
 }
 
 func insert() {
-	testV := Data{
-		num1: 1,
-		num2: 2,
-		num3: 3,
-		s1:   "00000000000000000000000000000000000000",
-	}
+	testV := Data{1, 2, 3, "abcdefghijklmnopqrstuvwxyz"}
 	count := 0
 	start := time.Now()
 	key := []byte{'a', 'a', 'a', 'a'}
-	lsm.Set(string(key), testV)
 	for a := 0; a < 26; a++ {
 		for b := 0; b < 26; b++ {
 			for c := 0; c < 26; c++ {
