@@ -6,8 +6,14 @@ import (
 	"sync"
 )
 
+type BSTNode struct {
+	KV    kv.Value
+	Left  *BSTNode
+	Right *BSTNode
+}
+
 type BST struct {
-	root  *Node
+	root  *BSTNode
 	count int
 	sync.RWMutex
 }
@@ -54,7 +60,7 @@ func (t *BST) Set(key string, value []byte) (oldValue kv.Value, hasOld bool) {
 	}
 
 	curr := t.root
-	newNode := &Node{
+	newNode := &BSTNode{
 		KV: kv.Value{
 			Key:   key,
 			Value: value,
@@ -111,7 +117,7 @@ func (t *BST) Delete(key string) (oldValue kv.Value, hasOld bool) {
 		log.Fatal("The tree is nil")
 	}
 
-	newNode := &Node{
+	newNode := &BSTNode{
 		KV: kv.Value{
 			Key:     key,
 			Value:   nil,
@@ -171,7 +177,7 @@ func (t *BST) GetValues() (values []kv.Value) {
 	defer t.RUnlock()
 
 	curr := t.root
-	var st []*Node
+	var st []*BSTNode
 	for {
 		if curr != nil {
 			st = append(st, curr)
