@@ -21,6 +21,15 @@ type SL struct {
 	sync.RWMutex
 }
 
+func NewSL() SL {
+	sl := SL{}
+	sl.head = &SLNode{
+		KV:      kv.Value{Key: "", Value: nil, Deleted: true},
+		forward: make([]*SLNode, maxLevel),
+	}
+	return sl
+}
+
 func (sl *SL) randomLevel() int {
 	lv := 1
 	for lv < maxLevel && rand.Float64() < pFactor {
@@ -66,7 +75,7 @@ func (sl *SL) Set(key string, value []byte) (oldValue kv.Value, hasOld bool) {
 	lv := sl.randomLevel()
 	sl.level = max(sl.level, lv)
 	newNode := &SLNode{
-		KV:      kv.Value{Key: key, Value: value},
+		KV:      kv.Value{Key: key, Value: value, Deleted: false},
 		forward: make([]*SLNode, lv),
 	}
 	curr := sl.head
@@ -76,17 +85,20 @@ func (sl *SL) Set(key string, value []byte) (oldValue kv.Value, hasOld bool) {
 		}
 		update[i] = curr
 	}
-
+	flag := true
+	curr = curr.forward[0]
+	if curr == nil || curr.KV.Key != key {
+		sl.count++
+		flag = false
+	}
 	for i, node := range update[:lv] {
 		newNode.forward[i] = node.forward[i]
 		node.forward[i] = newNode
 	}
-	curr = curr.forward[0]
-	if curr == nil || curr.KV.Key != key {
-		sl.count++
+	if !flag {
 		return kv.Value{}, false
 	}
-	return *curr.KV.Copy(), false
+	return *curr.KV.Copy(), true
 }
 
 // Delete 删除 key 并返回旧值
@@ -94,11 +106,6 @@ func (sl *SL) Delete(key string) (oldValue kv.Value, hasOld bool) {
 	sl.Lock()
 	defer sl.Unlock()
 	update := make([]*SLNode, maxLevel)
-	newNode := &SLNode{KV: kv.Value{
-		Key:     key,
-		Value:   nil,
-		Deleted: true,
-	}}
 	curr := sl.head
 	for i := sl.level - 1; i >= 0; i-- {
 		for curr.forward[i] != nil && curr.forward[i].KV.Key < key {
@@ -107,12 +114,14 @@ func (sl *SL) Delete(key string) (oldValue kv.Value, hasOld bool) {
 		update[i] = curr
 	}
 	curr = curr.forward[0]
-	if curr == nil || curr.KV.Key != key {
-		sl.count++
+	if curr == nil || curr.KV.Key != key || curr.KV.Deleted {
 		return kv.Value{}, false
 	}
-	if curr.KV.Deleted {
-		return kv.Value{}, false
+	f := make([]*SLNode, len(curr.forward))
+	copy(f, curr.forward)
+	newNode := &SLNode{
+		KV:      kv.Value{Key: key, Value: nil, Deleted: true},
+		forward: f,
 	}
 	for i := 0; i < sl.level && update[i].forward[i] == curr; i++ {
 		newNode.forward[i] = update[i].forward[i]

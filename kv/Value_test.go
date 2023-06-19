@@ -24,15 +24,3 @@ func Test_Value_Convert(t *testing.T) {
 		t.Fatal()
 	}
 }
-
-func Test_Value_Get(t *testing.T) {
-
-}
-
-func Test_Value_Encode(t *testing.T) {
-
-}
-
-func Test_Value_Decode(t *testing.T) {
-
-}
