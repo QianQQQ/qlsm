@@ -8,7 +8,7 @@ import (
 
 // Get 获取一个元素
 func Get[T any](key string) (T, bool) {
-	log.Print("Get ", key)
+	//log.Print("Get ", key)
 	// 先查内存表
 	value, result := db.MemoryTree.Search(key)
 	if result == kv.Success {
@@ -33,9 +33,7 @@ func Set[T any](key string, value T) bool {
 		log.Println(err)
 		return false
 	}
-
 	_, _ = db.MemoryTree.Set(key, data)
-
 	// 写入 wal.log
 	db.Wal.Write(kv.Value{
 		Key:     key,

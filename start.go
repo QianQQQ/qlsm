@@ -30,7 +30,7 @@ func Start(cfg config.Config) {
 // 初始化 DB, 从磁盘文件中还原 SsTable、WalF、内存表等
 func initDatabase(dir string) {
 	db = &DB{
-		MemoryTree: &memTable.BST{},
+		MemoryTree: memTable.NewSL(),
 		Wal:        &wal.Wal{},
 		TableTree:  &ssTable.TablesTree{},
 	}

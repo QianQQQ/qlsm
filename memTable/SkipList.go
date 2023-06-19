@@ -1,6 +1,7 @@
 package memTable
 
 import (
+	"fmt"
 	"math/rand"
 	"qlsm/kv"
 	"sync"
@@ -21,13 +22,13 @@ type SL struct {
 	sync.RWMutex
 }
 
-func NewSL() SL {
+func NewSL() *SL {
 	sl := SL{}
 	sl.head = &SLNode{
 		KV:      kv.Value{Key: "", Value: nil, Deleted: true},
 		forward: make([]*SLNode, maxLevel),
 	}
-	return sl
+	return &sl
 }
 
 func (sl *SL) randomLevel() int {
@@ -54,7 +55,7 @@ func (sl *SL) Search(key string) (kv.Value, kv.SearchResult) {
 		}
 	}
 	curr = curr.forward[0]
-	if curr.KV.Key == key {
+	if curr != nil && curr.KV.Key == key {
 		if !curr.KV.Deleted {
 			return curr.KV, kv.Success
 		} else {
@@ -140,6 +141,25 @@ func (sl *SL) GetValues() (values []kv.Value) {
 		curr = curr.forward[0]
 	}
 	return values
+}
+
+func (sl *SL) Swap() *SL {
+	//sl.Lock()
+	//defer sl.Unlock()
+	//newSL := NewSL()
+	//newSL.head = sl.head
+	//newSL.count = sl.count
+	//sl.head = nil
+	//sl.count = 0
+	return sl
+}
+
+func (sl *SL) Show() {
+	curr := sl.head
+	for curr != nil {
+		fmt.Println(curr.KV.Key)
+		curr = curr.forward[0]
+	}
 }
 
 func max(i, j int) int {

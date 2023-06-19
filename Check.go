@@ -22,9 +22,10 @@ func checkMemory() {
 	if count < cfg.Threshold {
 		return
 	}
-
 	log.Println("Compressing memory")
+	log.Println(db.MemoryTree)
 	tmpTree := db.MemoryTree.Swap()
+	log.Println(db.MemoryTree)
 	// 将内存表存储到 SsTable 中
 	db.TableTree.CreateNewTable(tmpTree.GetValues())
 	db.Wal.Reset()

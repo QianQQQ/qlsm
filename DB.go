@@ -8,12 +8,12 @@ import (
 
 type DB struct {
 	// 内存表
-	MemoryTree *memTable.BST
+	MemoryTree *memTable.SL
 	// SsTable 列表
 	TableTree *ssTable.TablesTree
 	// WalF 文件句柄
 	Wal *wal.Wal
 }
 
-// 数据库，全局唯一实例
+// 数据库, 全局唯一实例
 var db *DB

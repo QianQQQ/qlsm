@@ -58,7 +58,7 @@ func (tt *TablesTree) createTable(values []kv.Value, level int) *SsTable {
 	}
 
 	index := tt.Insert(table, level)
-	log.Printf("Create a new SsTable,level: %d ,index: %d\r\n", level, index)
+	log.Printf("Create a new SsTable, level: %d ,index: %d\r\n", level, index)
 	con := config.GetConfig()
 	filePath := con.DataDir + "/" + strconv.Itoa(level) + "." + strconv.Itoa(index) + ".db"
 	table.filepath = filePath

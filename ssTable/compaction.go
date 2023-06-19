@@ -50,8 +50,7 @@ func (tt *TablesTree) majorCompactionLevel(level int) {
 	curr := tt.levels[level]
 
 	// 将当前层的 SsTable 合并到一个有序二叉树中
-	memoryTree := &memTable.BST{}
-
+	memoryTree := memTable.NewSL()
 	tt.Lock()
 	for curr != nil {
 		t := curr.table

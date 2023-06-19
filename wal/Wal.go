@@ -20,7 +20,7 @@ type Wal struct {
 }
 
 // Load 通过 wal.log 文件初始化 Wal, 加载文件中的 WalF 到内存
-func (w *Wal) Load(dir string) *memTable.BST {
+func (w *Wal) Load(dir string) *memTable.SL {
 	log.Println("Start loading wal.log...")
 	start := time.Now()
 	defer func() {
@@ -40,7 +40,7 @@ func (w *Wal) Load(dir string) *memTable.BST {
 
 	info, _ := os.Stat(w.path)
 	size := info.Size()
-	t := &memTable.BST{}
+	t := memTable.NewSL()
 
 	if size == 0 {
 		return t

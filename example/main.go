@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type Data struct {
+type TestValue struct {
 	A int64
 	B int64
 	C int64
@@ -18,7 +18,7 @@ type Data struct {
 }
 
 func main() {
-	log.SetFlags(log.LstdFlags)
+	log.SetFlags(log.LstdFlags | log.Llongfile)
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -35,25 +35,45 @@ func main() {
 		CheckInterval: 3,
 	})
 	insert()
-	query()
+	queryAll()
 }
 
 func query() {
 	start := time.Now()
-	v, _ := lsm.Get[Data]("aaaa")
+	v, _ := lsm.Get[TestValue]("aaaa")
 	elapse := time.Since(start)
 	fmt.Println("查找 aaaa 完成，消耗时间：", elapse)
 	fmt.Println(v)
 
 	start = time.Now()
-	v, _ = lsm.Get[Data]("zzzz")
+	v, _ = lsm.Get[TestValue]("zzzz")
 	elapse = time.Since(start)
 	fmt.Println("查找 zzzz 完成，消耗时间：", elapse)
 	fmt.Println(v)
 }
 
+func queryAll() {
+	start := time.Now()
+	key := []byte{'a', 'a', 'a', 'a'}
+	for a := 0; a < 26; a++ {
+		for b := 0; b < 26; b++ {
+			for c := 0; c < 26; c++ {
+				for d := 0; d < 26; d++ {
+					key[0] = 'a' + byte(a)
+					key[1] = 'a' + byte(b)
+					key[2] = 'a' + byte(c)
+					key[3] = 'a' + byte(d)
+					lsm.Get[TestValue](string(key))
+				}
+			}
+		}
+	}
+	elapse := time.Since(start)
+	fmt.Println("查找完成, 消耗时间：", elapse)
+}
+
 func insert() {
-	testV := Data{1, 2, 3, "abcdefghijklmnopqrstuvwxyz"}
+	testV := TestValue{1, 2, 3, "abcdefghijklmnopqrstuvwxyz"}
 	count := 0
 	start := time.Now()
 	key := []byte{'a', 'a', 'a', 'a'}
