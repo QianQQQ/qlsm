@@ -27,7 +27,7 @@ type TablesTree struct {
 }
 
 // Search 从所有 SsTable 表中查找数据
-func (tt *TablesTree) Search(key string) (kv.Value, kv.SearchResult) {
+func (tt *TablesTree) Search(key string) (kv.Data, kv.SearchResult) {
 	tt.RLock()
 	defer tt.RUnlock()
 	// 依次遍历每层 SsTable
@@ -44,13 +44,13 @@ func (tt *TablesTree) Search(key string) (kv.Value, kv.SearchResult) {
 			// 未找到, 则查找下一个 SsTable
 			if searchResult == kv.None {
 				continue
-			} else { // 如果找到或已被删除, 则直接返回结果
-				return value, searchResult
 			}
+			// 如果找到或已被删除, 则直接返回结果
+			return value, searchResult
 		}
 	}
 	// 没有找到
-	return kv.Value{}, kv.None
+	return kv.Data{}, kv.None
 }
 
 // Insert 在 TablesTree 的 level 层的末尾插入 SsTable, 并返回新插入的 SsTable 的 index
@@ -76,11 +76,9 @@ func (tt *TablesTree) Insert(t *SsTable, level int) (index int) {
 
 // Init 通过 loadDBfile 对 dir 路径下的 .db 文件来进行初始化 TablesTree
 func (tt *TablesTree) Init(dir string) {
-	log.Println("The TablesTree starts loading")
+	log.Println("The TablesTree starts loading...")
 	start := time.Now()
-	defer func() {
-		log.Println("The TablesTree finishes loading, consumption of time : ", time.Since(start))
-	}()
+	defer func() { log.Println("The TablesTree finishes loading, consumption of time: ", time.Since(start)) }()
 
 	// 初始化每一层 SsTable 的文件总最大值
 	cfg := config.GetConfig()
@@ -92,7 +90,7 @@ func (tt *TablesTree) Init(dir string) {
 	tt.levels = make([]*tableNode, 10)
 	files, err := os.ReadDir(dir)
 	if err != nil {
-		log.Panicln("Failed to read the database files: ", err.Error())
+		log.Panicln("Failed to read the database files:", err.Error())
 	}
 	for _, f := range files {
 		if path.Ext(f.Name()) == ".db" {
@@ -114,7 +112,7 @@ func (tt *TablesTree) loadDBFile(path string) {
 	log.Println("Start loading the ", path)
 	start := time.Now()
 	defer func() {
-		log.Println("Finish Loading the ", path, ", Consumption of time : ", time.Since(start))
+		log.Println("Finish Loading the ", path, ", Consumption of time: ", time.Since(start))
 	}()
 
 	level, index, err := getSsTableInfo(filepath.Base(path))
@@ -123,10 +121,7 @@ func (tt *TablesTree) loadDBFile(path string) {
 	}
 	t := &SsTable{}
 	t.Load(path)
-	newNode := &tableNode{
-		index: index,
-		table: t,
-	}
+	newNode := &tableNode{index: index, table: t}
 
 	// 根据 index 将 SsTable 插入到合适的位置
 	curr := tt.levels[level]

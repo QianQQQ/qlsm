@@ -7,7 +7,7 @@ import (
 )
 
 type BSTNode struct {
-	KV    kv.Value
+	KV    kv.Data
 	Left  *BSTNode
 	Right *BSTNode
 }
@@ -24,7 +24,7 @@ func (t *BST) GetCount() int {
 }
 
 // Search 查找 Key 的值
-func (t *BST) Search(key string) (kv.Value, kv.SearchResult) {
+func (t *BST) Search(key string) (kv.Data, kv.SearchResult) {
 	t.RLock()
 	defer t.RUnlock()
 
@@ -38,7 +38,7 @@ func (t *BST) Search(key string) (kv.Value, kv.SearchResult) {
 			if !curr.KV.Deleted {
 				return curr.KV, kv.Success
 			} else {
-				return kv.Value{}, kv.Deleted
+				return kv.Data{}, kv.Deleted
 			}
 		}
 		if key < curr.KV.Key {
@@ -47,11 +47,11 @@ func (t *BST) Search(key string) (kv.Value, kv.SearchResult) {
 			curr = curr.Right
 		}
 	}
-	return kv.Value{}, kv.None
+	return kv.Data{}, kv.None
 }
 
 // Set 设置 Key 的值并返回旧值
-func (t *BST) Set(key string, value []byte) (oldValue kv.Value, hasOld bool) {
+func (t *BST) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -61,7 +61,7 @@ func (t *BST) Set(key string, value []byte) (oldValue kv.Value, hasOld bool) {
 
 	curr := t.root
 	newNode := &BSTNode{
-		KV: kv.Value{
+		KV: kv.Data{
 			Key:   key,
 			Value: value,
 		},
@@ -70,7 +70,7 @@ func (t *BST) Set(key string, value []byte) (oldValue kv.Value, hasOld bool) {
 	if curr == nil {
 		t.root = newNode
 		t.count++
-		return kv.Value{}, false
+		return kv.Data{}, false
 	}
 
 	for curr != nil {
@@ -83,7 +83,7 @@ func (t *BST) Set(key string, value []byte) (oldValue kv.Value, hasOld bool) {
 			if oldKV.Deleted {
 				// FIXME 需要增加
 				t.count++
-				return kv.Value{}, false
+				return kv.Data{}, false
 			} else {
 				return *oldKV, true
 			}
@@ -92,24 +92,24 @@ func (t *BST) Set(key string, value []byte) (oldValue kv.Value, hasOld bool) {
 			if curr.Left == nil {
 				curr.Left = newNode
 				t.count++
-				return kv.Value{}, false
+				return kv.Data{}, false
 			}
 			curr = curr.Left
 		} else {
 			if curr.Right == nil {
 				curr.Right = newNode
 				t.count++
-				return kv.Value{}, false
+				return kv.Data{}, false
 			}
 			curr = curr.Right
 		}
 	}
 	log.Fatalf("tree fail to Set value, key: %s, value: %v", key, value)
-	return kv.Value{}, false
+	return kv.Data{}, false
 }
 
 // Delete 删除 key 并返回旧值
-func (t *BST) Delete(key string) (oldValue kv.Value, hasOld bool) {
+func (t *BST) Delete(key string) (oldValue kv.Data, hasOld bool) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -118,7 +118,7 @@ func (t *BST) Delete(key string) (oldValue kv.Value, hasOld bool) {
 	}
 
 	newNode := &BSTNode{
-		KV: kv.Value{
+		KV: kv.Data{
 			Key:     key,
 			Value:   nil,
 			Deleted: true,
@@ -128,7 +128,7 @@ func (t *BST) Delete(key string) (oldValue kv.Value, hasOld bool) {
 	curr := t.root
 	if curr == nil {
 		t.root = newNode
-		return kv.Value{}, false
+		return kv.Data{}, false
 	}
 
 	for curr != nil {
@@ -143,7 +143,7 @@ func (t *BST) Delete(key string) (oldValue kv.Value, hasOld bool) {
 				t.count--
 				return *oldKV, true
 			} else { // 已被删除过
-				return kv.Value{}, false
+				return kv.Data{}, false
 			}
 		}
 		// 往下一层查找
@@ -168,11 +168,11 @@ func (t *BST) Delete(key string) (oldValue kv.Value, hasOld bool) {
 		}
 	}
 	log.Fatalf("The tree fail to delete key, key: %s", key)
-	return kv.Value{}, false
+	return kv.Data{}, false
 }
 
 // GetValues 获取树中的所有元素
-func (t *BST) GetValues() (values []kv.Value) {
+func (t *BST) GetValues() (values []kv.Data) {
 	t.RLock()
 	defer t.RUnlock()
 
@@ -200,7 +200,6 @@ func (t *BST) Swap() *BST {
 
 	newTree := &BST{}
 	newTree.root = t.root
-	// FIXME
 	newTree.count = t.count
 	t.root = nil
 	t.count = 0

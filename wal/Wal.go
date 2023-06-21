@@ -20,7 +20,7 @@ type Wal struct {
 }
 
 // Load 通过 wal.log 文件初始化 Wal, 加载文件中的 WalF 到内存
-func (w *Wal) Load(dir string) *memTable.SL {
+func (w *Wal) Load(dir string) memTable.MemTable {
 	log.Println("Start loading wal.log...")
 	start := time.Now()
 	defer func() {
@@ -74,9 +74,9 @@ func (w *Wal) Load(dir string) *memTable.SL {
 		if err = binary.Read(buf, binary.LittleEndian, &dataLen); err != nil {
 			log.Panicln("Can not read for dataLen:", err)
 		}
-		// 将元素的所有字节读取出来，并还原为 kv.Value
+		// 将元素的所有字节读取出来，并还原为 kv.Data
 		index += 8
-		var value kv.Value
+		var value kv.Data
 		dataArea := data[index:(index + dataLen)]
 		if err = json.Unmarshal(dataArea, &value); err != nil {
 			log.Panicln("Can not unmarshal the data:", err)
@@ -91,14 +91,14 @@ func (w *Wal) Load(dir string) *memTable.SL {
 	return t
 }
 
-func (w *Wal) Write(value kv.Value) {
+func (w *Wal) Write(value kv.Data) {
 	w.Lock()
 	defer w.Unlock()
 
 	if value.Deleted {
-		log.Println("wal.log: delete ", value.Key)
+		//log.Println("wal.log: delete", value.Key)
 	} else {
-		log.Println("wal.log: insert ", value.Key)
+		//log.Println("wal.log: insert", value.Key)
 	}
 
 	data, _ := json.Marshal(value)
@@ -117,7 +117,7 @@ func (w *Wal) Reset() {
 	w.Lock()
 	defer w.Unlock()
 
-	log.Println("Start resetting the wal.log file")
+	log.Println("Start resetting the wal.log...")
 
 	if err := w.f.Close(); err != nil {
 		log.Panicln(err)

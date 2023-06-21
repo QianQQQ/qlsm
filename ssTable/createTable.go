@@ -11,17 +11,17 @@ import (
 	"sync"
 )
 
-func (tt *TablesTree) CreateNewTable(values []kv.Value) {
+func (tt *TablesTree) CreateNewTable(values []kv.Data) {
 	tt.createTable(values, 0)
 }
 
-func (tt *TablesTree) createTable(values []kv.Value, level int) *SsTable {
+func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 	// 生成数据区
 	keys := make([]string, 0, len(values))
 	positions := map[string]Position{}
 	var dataArea []byte
 	for _, value := range values {
-		data, err := kv.Encode(value)
+		data, err := json.Marshal(value)
 		if err != nil {
 			log.Println("Failed to Insert Key: ", value.Key, err)
 			continue

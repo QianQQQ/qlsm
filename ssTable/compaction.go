@@ -1,6 +1,7 @@
 package ssTable
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"qlsm/config"
@@ -24,7 +25,6 @@ func (tt *TablesTree) getCount(level int) int {
 	return count
 }
 
-// 压缩文件
 func (tt *TablesTree) majorCompaction() {
 	cfg := config.GetConfig()
 	for levelIndex := range tt.levels {
@@ -38,14 +38,14 @@ func (tt *TablesTree) majorCompaction() {
 // TODO 如何用外存进行合并
 // 压缩当前层的文件到下一层，只能被 majorCompaction() 调用
 func (tt *TablesTree) majorCompactionLevel(level int) {
-	log.Println("Compressing layer ", level, " files")
+	log.Println("Compressing layer", level, "files")
 	start := time.Now()
 	defer func() {
-		log.Println("Completed compression,consumption of time : ", time.Since(start))
+		log.Println("Completed compression, consumption of time: ", time.Since(start))
 	}()
 
-	log.Printf("Compressing layer %d.db files\r\n", level)
-	// 用于加载 一个 SsTable 的数据区到缓存中
+	log.Printf("Compressing layer %d.db files\n", level)
+	// 用于加载一个 SsTable 的数据区到缓存中
 	tableCache := make([]byte, levelMaxSize[level])
 	curr := tt.levels[level]
 
@@ -61,18 +61,18 @@ func (tt *TablesTree) majorCompactionLevel(level int) {
 		newSlice := tableCache[:t.metaInfo.dataLen]
 		// 读取 SsTable 的数据区
 		if _, err := t.f.Seek(0, 0); err != nil {
-			log.Println(" error open file ", t.filepath)
+			log.Println("error open file ", t.filepath)
 			panic(err)
 		}
 		if _, err := t.f.Read(newSlice); err != nil {
-			log.Println(" error read file ", t.filepath)
+			log.Println("error read file ", t.filepath)
 			panic(err)
 		}
 		// 读取每一个元素
 		for k, position := range t.sparseIndex {
 			if !position.Deleted {
-				value, err := kv.Decode(newSlice[position.Start:(position.Start + position.Len)])
-				if err != nil {
+				var value kv.Data
+				if err := json.Unmarshal(newSlice[position.Start:(position.Start+position.Len)], &value); err != nil {
 					log.Fatal(err)
 				}
 				memoryTree.Set(k, value.Value)
@@ -110,12 +110,12 @@ func (tt *TablesTree) clearLevel(oldNode *tableNode) {
 	for oldNode != nil {
 		err := oldNode.table.f.Close()
 		if err != nil {
-			log.Println(" error close file,", oldNode.table.filepath)
+			log.Println("error close file,", oldNode.table.filepath)
 			panic(err)
 		}
 		err = os.Remove(oldNode.table.filepath)
 		if err != nil {
-			log.Println(" error delete file,", oldNode.table.filepath)
+			log.Println("error delete file,", oldNode.table.filepath)
 			panic(err)
 		}
 		oldNode.table.f = nil

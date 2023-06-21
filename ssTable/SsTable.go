@@ -112,7 +112,7 @@ func (t *SsTable) Load(filepath string) {
 
 // Search 先从 sortIndex 二分查找 Key, 如果存在, 通过 sparseIndex 找到 Position, 再从数据区加载
 // sortIndex 与 sparseIndex 常驻内存
-func (t *SsTable) Search(key string) (value kv.Value, result kv.SearchResult) {
+func (t *SsTable) Search(key string) (value kv.Data, result kv.SearchResult) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -125,7 +125,7 @@ func (t *SsTable) Search(key string) (value kv.Value, result kv.SearchResult) {
 		if t.sortIndex[m] == key {
 			position = t.sparseIndex[key]
 			if position.Deleted {
-				return kv.Value{}, kv.Deleted
+				return kv.Data{}, kv.Deleted
 			}
 			break
 		} else if t.sortIndex[m] < key {
@@ -136,7 +136,7 @@ func (t *SsTable) Search(key string) (value kv.Value, result kv.SearchResult) {
 	}
 
 	if position.Start == -1 {
-		return kv.Value{}, kv.None
+		return kv.Data{}, kv.None
 	}
 
 	// Todo：如果读取失败，需要增加错误处理过程
@@ -144,17 +144,15 @@ func (t *SsTable) Search(key string) (value kv.Value, result kv.SearchResult) {
 	bs := make([]byte, position.Len)
 	if _, err := t.f.Seek(position.Start, 0); err != nil {
 		log.Println("Can not seek for data:", err)
-		return kv.Value{}, kv.None
+		return kv.Data{}, kv.None
 	}
 	if _, err := t.f.Read(bs); err != nil {
 		log.Println("Can not read for data:", err)
-		return kv.Value{}, kv.None
+		return kv.Data{}, kv.None
 	}
-
-	value, err := kv.Decode(bs)
-	if err != nil {
+	if err := json.Unmarshal(bs, &value); err != nil {
 		log.Println(err)
-		return kv.Value{}, kv.None
+		return kv.Data{}, kv.None
 	}
 	return value, kv.Success
 }
