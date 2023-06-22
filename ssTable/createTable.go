@@ -23,7 +23,7 @@ func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 	for _, value := range values {
 		data, err := json.Marshal(value)
 		if err != nil {
-			log.Println("Failed to Insert Key: ", value.Key, err)
+			log.Println("Failed to Insert Key:", value.Key, err)
 			continue
 		}
 		keys = append(keys, value.Key)

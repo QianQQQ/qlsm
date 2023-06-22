@@ -57,40 +57,37 @@ func (tt *TablesTree) Search(key string) (kv.Data, kv.SearchResult) {
 func (tt *TablesTree) Insert(t *SsTable, level int) (index int) {
 	tt.Lock()
 	defer tt.Unlock()
-	node := tt.levels[level]
+	curr := tt.levels[level]
 	newNode := &tableNode{table: t}
-	if node == nil {
+	if curr == nil {
 		tt.levels[level] = newNode
 	} else {
-		for node != nil {
-			if node.next == nil {
-				newNode.index = node.index + 1
-				node.next = newNode
-				break
-			}
-			node = node.next
+		for curr.next != nil {
+			curr = curr.next
 		}
+		newNode.index = curr.index + 1
+		curr.next = newNode
 	}
 	return newNode.index
 }
 
-// Init 通过 loadDBfile 对 dir 路径下的 .db 文件来进行初始化 TablesTree
+// Init 初始化 TablesTree
 func (tt *TablesTree) Init(dir string) {
-	log.Println("The TablesTree starts loading...")
+	log.Println("the TablesTree starts loading...")
 	start := time.Now()
-	defer func() { log.Println("The TablesTree finishes loading, consumption of time: ", time.Since(start)) }()
-
-	// 初始化每一层 SsTable 的文件总最大值
+	defer func() { log.Println("the TablesTree finishes loading, consumption of time:", time.Since(start)) }()
+	// 获取各层文件大小
 	cfg := config.GetConfig()
 	levelMaxSize = make([]int, 10)
 	levelMaxSize[0] = cfg.Level0Size
 	for i := 1; i < 10; i++ {
 		levelMaxSize[i] = levelMaxSize[i-1] * 10
 	}
+	// 加载 db 文件
 	tt.levels = make([]*tableNode, 10)
 	files, err := os.ReadDir(dir)
 	if err != nil {
-		log.Panicln("Failed to read the database files:", err.Error())
+		log.Panicln("failed to read the database files:", err.Error())
 	}
 	for _, f := range files {
 		if path.Ext(f.Name()) == ".db" {
@@ -99,20 +96,12 @@ func (tt *TablesTree) Init(dir string) {
 	}
 }
 
-func getSsTableInfo(filename string) (level int, index int, err error) {
-	n, err := fmt.Sscanf(filename, "%d.%d.db", &level, &index)
-	if n != 2 || err != nil {
-		return 0, 0, fmt.Errorf("incorrect data file filename for SsTable: %q", filename)
-	}
-	return level, index, nil
-}
-
 // 加载一个 db 文件到 TablesTree 中
 func (tt *TablesTree) loadDBFile(path string) {
-	log.Println("Start loading the ", path)
+	log.Println("start loading the ", path)
 	start := time.Now()
 	defer func() {
-		log.Println("Finish Loading the ", path, ", Consumption of time: ", time.Since(start))
+		log.Println("finish loading the ", path, ", consumption of time: ", time.Since(start))
 	}()
 
 	level, index, err := getSsTableInfo(filepath.Base(path))
@@ -130,13 +119,18 @@ func (tt *TablesTree) loadDBFile(path string) {
 		newNode.next = curr
 		return
 	}
-
-	for curr != nil {
-		if curr.next == nil || newNode.index < curr.next.index {
-			newNode.next = curr.next
-			curr.next = newNode
-			return
-		}
+	for curr.next != nil && curr.next.index <= newNode.index {
 		curr = curr.next
 	}
+	newNode.next = curr.next
+	curr.next = newNode
+}
+
+// 获取 db 对应的 level 和 index 信息
+func getSsTableInfo(filename string) (level int, index int, err error) {
+	n, err := fmt.Sscanf(filename, "%d.%d.db", &level, &index)
+	if n != 2 || err != nil {
+		return 0, 0, fmt.Errorf("incorrect data file filename for SsTable: %q", filename)
+	}
+	return level, index, nil
 }

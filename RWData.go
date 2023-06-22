@@ -43,12 +43,10 @@ func Set[T any](key string, value T) bool {
 	return true
 }
 
-// DeleteAndGet 删除元素并尝试获取旧的值，
-// 返回的 bool 表示是否有旧值，不表示是否删除成功
+// DeleteAndGet 删除元素并尝试获取旧的值
 func DeleteAndGet[T any](key string) (T, bool) {
 	//log.Print("Delete ", key)
 	value, success := db.MemoryTree.Delete(key)
-
 	if success {
 		// 写入 wal.log
 		db.Wal.Write(kv.Data{
@@ -63,7 +61,7 @@ func DeleteAndGet[T any](key string) (T, bool) {
 }
 
 // Delete 删除元素
-func Delete[T any](key string) {
+func Delete(key string) {
 	//log.Print("Delete ", key)
 	db.MemoryTree.Delete(key)
 	db.Wal.Write(kv.Data{

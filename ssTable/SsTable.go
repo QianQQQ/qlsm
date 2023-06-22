@@ -24,9 +24,9 @@ import (
 */
 
 type SsTable struct {
-	f           *os.File //文件句柄
-	filepath    string   // SsTable 文件路径
-	metaInfo    MetaInfo
+	f           *os.File            //文件句柄
+	filepath    string              // SsTable 文件路径
+	metaInfo    MetaInfo            // SsTable 元数据
 	sparseIndex map[string]Position // 文件的稀疏索引列表
 	sortIndex   []string            // 排序后的 key 列表
 	lock        sync.Locker
@@ -51,56 +51,56 @@ type Position struct {
 // Load 将 db 文件 加载成 SsTable
 func (t *SsTable) Load(filepath string) {
 	t.filepath = filepath
-	t.lock = &sync.Mutex{}
 	t.sparseIndex = map[string]Position{}
+	t.lock = &sync.Mutex{}
 	// 加载文件句柄
 	f, err := os.OpenFile(t.filepath, os.O_RDONLY, 0666)
 	if err != nil {
-		log.Panicln("Can not open file ", t.filepath, ": ", err.Error())
+		log.Panicln("can not open file ", t.filepath, ": ", err.Error())
 	}
 	t.f = f
 
 	// 加载元数据
 	_, err = f.Seek(-8*5, 2)
 	if err != nil {
-		log.Panicln("Can not read metadata for version:", err.Error())
+		log.Panicln("can not read metadata for version:", err.Error())
 	}
 	_ = binary.Read(f, binary.LittleEndian, &t.metaInfo.version)
 
 	_, err = f.Seek(-8*4, 2)
 	if err != nil {
-		log.Panicln("Can not read metadata for dataStart:", err.Error())
+		log.Panicln("can not read metadata for dataStart:", err.Error())
 	}
 	_ = binary.Read(f, binary.LittleEndian, &t.metaInfo.dataStart)
 
 	_, err = f.Seek(-8*3, 2)
 	if err != nil {
-		log.Panicln("Can not read metadata for dataLen:", err.Error())
+		log.Panicln("can not read metadata for dataLen:", err.Error())
 	}
 	_ = binary.Read(f, binary.LittleEndian, &t.metaInfo.dataLen)
 
 	_, err = f.Seek(-8*2, 2)
 	if err != nil {
-		log.Panicln("Can not read metadata for indexStart:", err.Error())
+		log.Panicln("can not read metadata for indexStart:", err.Error())
 	}
 	_ = binary.Read(f, binary.LittleEndian, &t.metaInfo.indexStart)
 
 	_, err = f.Seek(-8*1, 2)
 	if err != nil {
-		log.Panicln("Can not read metadata for indexLen:", err.Error())
+		log.Panicln("can not read metadata for indexLen:", err.Error())
 	}
 	_ = binary.Read(f, binary.LittleEndian, &t.metaInfo.indexLen)
 
 	// 加载稀疏索引区
 	bs := make([]byte, t.metaInfo.indexLen)
 	if _, err = f.Seek(t.metaInfo.indexStart, 0); err != nil {
-		log.Panicln("Can not seek sparseIndex:", err.Error())
+		log.Panicln("can not seek sparseIndex:", err.Error())
 	}
 	if _, err = f.Read(bs); err != nil {
-		log.Panicln("Can not read sparseIndex:", err.Error())
+		log.Panicln("can not read sparseIndex:", err.Error())
 	}
 	if err = json.Unmarshal(bs, &t.sparseIndex); err != nil {
-		log.Panicln("Can not unmarshal for sparseIndex:", err.Error())
+		log.Panicln("can not unmarshal for sparseIndex:", err.Error())
 	}
 	t.sortIndex = make([]string, 0, len(t.sparseIndex))
 	for k := range t.sparseIndex {

@@ -3,7 +3,6 @@ package config
 import "sync"
 
 type Config struct {
-	LogDir        string // 日志目录
 	DataDir       string // 数据目录
 	Level0Size    int    // 0 层所有 SsTable 文件大小总和的最大值 (MB)
 	PartSize      int    // 每层 SsTable 数量的最大值阈值

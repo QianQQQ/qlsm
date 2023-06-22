@@ -38,10 +38,10 @@ func (tt *TablesTree) majorCompaction() {
 // TODO 如何用外存进行合并
 // 压缩当前层的文件到下一层，只能被 majorCompaction() 调用
 func (tt *TablesTree) majorCompactionLevel(level int) {
-	log.Println("Compressing layer", level, "files")
+	log.Println("compressing layer", level, "files")
 	start := time.Now()
 	defer func() {
-		log.Println("Completed compression, consumption of time: ", time.Since(start))
+		log.Println("completed compression, consumption of time", time.Since(start))
 	}()
 
 	log.Printf("Compressing layer %d.db files\n", level)

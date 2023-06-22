@@ -46,22 +46,19 @@ func insert() {
 	count := 0
 	start := time.Now()
 	defer func() { log.Println("insert完成, 数据量", count, ", 消耗时间", time.Since(start)) }()
-	key := []byte{'a', 'a', 'a', 'a', 'a', 'a'}
+	key := []byte{'a', 'a', 'a', 'a', 'a'}
 	for a := 0; a < 26; a++ {
 		for b := 0; b < 26; b++ {
 			for c := 0; c < 26; c++ {
 				for d := 0; d < 26; d++ {
 					for e := 0; e < 26; e++ {
-						for f := 0; f < 26; f++ {
-							key[0] = 'a' + byte(a)
-							key[1] = 'a' + byte(b)
-							key[2] = 'a' + byte(c)
-							key[3] = 'a' + byte(d)
-							key[4] = 'a' + byte(e)
-							key[5] = 'a' + byte(f)
-							lsm.Set[TestValue](string(key), testV)
-							count++
-						}
+						key[0] = 'a' + byte(a)
+						key[1] = 'a' + byte(b)
+						key[2] = 'a' + byte(c)
+						key[3] = 'a' + byte(d)
+						key[4] = 'a' + byte(e)
+						lsm.Set[TestValue](string(key), testV)
+						count++
 					}
 				}
 			}
@@ -72,21 +69,18 @@ func insert() {
 func queryAll() {
 	start := time.Now()
 	defer func() { log.Println("queryAll完成, 消耗时间：", time.Since(start)) }()
-	key := []byte{'a', 'a', 'a', 'a'}
+	key := []byte{'a', 'a', 'a', 'a', 'a'}
 	for a := 0; a < 26; a++ {
 		for b := 0; b < 26; b++ {
 			for c := 0; c < 26; c++ {
 				for d := 0; d < 26; d++ {
 					for e := 0; e < 26; e++ {
-						for f := 0; f < 26; f++ {
-							key[0] = 'a' + byte(a)
-							key[1] = 'a' + byte(b)
-							key[2] = 'a' + byte(c)
-							key[3] = 'a' + byte(d)
-							key[4] = 'a' + byte(e)
-							key[5] = 'a' + byte(f)
-							lsm.Get[TestValue](string(key))
-						}
+						key[0] = 'a' + byte(a)
+						key[1] = 'a' + byte(b)
+						key[2] = 'a' + byte(c)
+						key[3] = 'a' + byte(d)
+						key[4] = 'a' + byte(e)
+						lsm.Get[TestValue](string(key))
 					}
 				}
 			}
@@ -103,17 +97,20 @@ func queryAbsent() {
 
 func deleteAll() {
 	start := time.Now()
-	defer func() { log.Println("deleteAll完成, 消耗时间:", time.Since(start)) }()
-	key := []byte{'a', 'a', 'a', 'a'}
+	defer func() { log.Println("deleteAll完成, 消耗时间", time.Since(start)) }()
+	key := []byte{'a', 'a', 'a', 'a', 'a'}
 	for a := 0; a < 26; a++ {
 		for b := 0; b < 26; b++ {
 			for c := 0; c < 26; c++ {
 				for d := 0; d < 26; d++ {
-					key[0] = 'a' + byte(a)
-					key[1] = 'a' + byte(b)
-					key[2] = 'a' + byte(c)
-					key[3] = 'a' + byte(d)
-					lsm.Delete[TestValue](string(key))
+					for e := 0; e < 26; e++ {
+						key[0] = 'a' + byte(a)
+						key[1] = 'a' + byte(b)
+						key[2] = 'a' + byte(c)
+						key[3] = 'a' + byte(d)
+						key[4] = 'a' + byte(e)
+						lsm.Delete(string(key))
+					}
 				}
 			}
 		}
@@ -123,5 +120,5 @@ func deleteAll() {
 func deleteAbsent() {
 	start := time.Now()
 	defer func() { log.Println("deleteAbsent完成, 消耗时间", time.Since(start)) }()
-	lsm.Delete[TestValue]("abcdefg")
+	lsm.Delete("abcdefg")
 }
