@@ -84,7 +84,7 @@ func (tt *TablesTree) Init(dir string) {
 		levelMaxSize[i] = levelMaxSize[i-1] * 10
 	}
 	// 加载各层 db 文件
-	tt.levels = make([]*tableNode, 10)
+	tt.levels = make([]*tableNode, cfg.PartSize)
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		log.Panicln("failed to read the database files:", err.Error())

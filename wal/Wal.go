@@ -85,7 +85,7 @@ func (w *Wal) Load(dir string) memTable.MemTable {
 		if value.Deleted {
 			t.Delete(value.Key)
 		} else {
-			t.Set(value.Key, value.Value)
+			t.Set(value.Key, value.Value, false)
 		}
 		index += dataLen
 	}

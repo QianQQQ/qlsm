@@ -68,7 +68,7 @@ func (sl *SL) Search(key string) (kv.Data, kv.SearchResult) {
 }
 
 // Set 设置 Key 的值并返回旧值
-func (sl *SL) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
+func (sl *SL) Set(key string, value []byte, deleted bool) (oldValue kv.Data, hasOld bool) {
 	sl.Lock()
 	defer sl.Unlock()
 	update := make([]*Node, maxLevel)
@@ -78,7 +78,7 @@ func (sl *SL) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 	lv := sl.randomLevel()
 	sl.level = max(sl.level, lv)
 	newNode := &Node{
-		KV:      kv.Data{Key: key, Value: value, Deleted: false},
+		KV:      kv.Data{Key: key, Value: value, Deleted: deleted},
 		forward: make([]*Node, lv),
 	}
 	curr := sl.head
@@ -106,31 +106,26 @@ func (sl *SL) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 
 // Delete 删除 key 并返回旧值
 func (sl *SL) Delete(key string) (oldValue kv.Data, hasOld bool) {
-	sl.Lock()
-	defer sl.Unlock()
-	update := make([]*Node, maxLevel)
+	//sl.Lock()
+	//defer sl.Unlock()
 	curr := sl.head
 	for i := sl.level - 1; i >= 0; i-- {
 		for curr.forward[i] != nil && curr.forward[i].KV.Key < key {
 			curr = curr.forward[i]
 		}
-		update[i] = curr
 	}
-	curr = curr.forward[0]
-	if curr == nil || curr.KV.Key != key || curr.KV.Deleted {
-		return kv.Data{}, false
+	next := curr.forward[0]
+	// 如果有这个节点
+	if next != nil && next.KV.Key == key {
+		if next.KV.Deleted {
+			return kv.Data{}, false
+		} else {
+			curr.forward[0].KV.Deleted = true
+			return *next.KV.Copy(), true
+		}
 	}
-	f := make([]*Node, len(curr.forward))
-	copy(f, curr.forward)
-	newNode := &Node{
-		KV:      kv.Data{Key: key, Value: nil, Deleted: true},
-		forward: f,
-	}
-	for i := 0; i < sl.level && update[i].forward[i] == curr; i++ {
-		newNode.forward[i] = update[i].forward[i]
-		update[i].forward[i] = newNode
-	}
-	return *curr.KV.Copy(), true
+	sl.Set(key, nil, true)
+	return kv.Data{}, false
 }
 
 // GetValues 获取树中的所有元素

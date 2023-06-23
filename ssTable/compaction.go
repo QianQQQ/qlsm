@@ -76,7 +76,7 @@ func (tt *TablesTree) majorCompactionLevel(level int) {
 				if err := json.Unmarshal(newSlice[position.Start:(position.Start+position.Len)], &value); err != nil {
 					log.Fatal(err)
 				}
-				mt.Set(k, value.Value)
+				mt.Set(k, value.Value, false)
 			} else {
 				mt.Delete(k)
 			}

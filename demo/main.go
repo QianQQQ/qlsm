@@ -31,11 +31,11 @@ func main() {
 		CheckInterval: 1,
 	})
 	insert()
-	queryAll()
+	//queryAll()
 	//queryAbsent()
 	deleteAll()
 	//deleteAbsent()
-	//queryAll()
+	queryAll()
 }
 
 func insert() {
@@ -54,6 +54,7 @@ func insert() {
 					key[2] = 'a' + byte(c)
 					key[3] = 'a' + byte(d)
 					//key[4] = 'a' + byte(e)
+					testV.D = string(key) + "abcdefghijklmnopqrstuvwxyz"
 					lsm.Set[TestValue](string(key), testV)
 					count++
 					//}
@@ -77,7 +78,8 @@ func queryAll() {
 					key[2] = 'a' + byte(c)
 					key[3] = 'a' + byte(d)
 					//key[4] = 'a' + byte(e)
-					lsm.Get[TestValue](string(key))
+					log.Print(lsm.Get[TestValue](string(key)))
+
 					//}
 				}
 			}
