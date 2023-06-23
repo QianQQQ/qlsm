@@ -1,4 +1,4 @@
-package memTable
+package bst
 
 import (
 	"log"
@@ -6,14 +6,14 @@ import (
 	"sync"
 )
 
-type BSTNode struct {
+type Node struct {
 	KV    kv.Data
-	Left  *BSTNode
-	Right *BSTNode
+	Left  *Node
+	Right *Node
 }
 
 type BST struct {
-	root  *BSTNode
+	root  *Node
 	count int
 	sync.RWMutex
 }
@@ -60,7 +60,7 @@ func (t *BST) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 	}
 
 	curr := t.root
-	newNode := &BSTNode{
+	newNode := &Node{
 		KV: kv.Data{
 			Key:   key,
 			Value: value,
@@ -117,7 +117,7 @@ func (t *BST) Delete(key string) (oldValue kv.Data, hasOld bool) {
 		log.Fatal("The tree is nil")
 	}
 
-	newNode := &BSTNode{
+	newNode := &Node{
 		KV: kv.Data{
 			Key:     key,
 			Value:   nil,
@@ -177,7 +177,7 @@ func (t *BST) GetValues() (values []kv.Data) {
 	defer t.RUnlock()
 
 	curr := t.root
-	var st []*BSTNode
+	var st []*Node
 	for {
 		if curr != nil {
 			st = append(st, curr)

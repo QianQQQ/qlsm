@@ -9,6 +9,7 @@ import (
 	"path"
 	"qlsm/kv"
 	"qlsm/memTable"
+	"qlsm/memTable/skiplist"
 	"sync"
 	"time"
 )
@@ -40,7 +41,7 @@ func (w *Wal) Load(dir string) memTable.MemTable {
 
 	info, _ := os.Stat(w.path)
 	size := info.Size()
-	t := memTable.NewSL()
+	t := skiplist.New()
 
 	if size == 0 {
 		return t

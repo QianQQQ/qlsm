@@ -1,34 +1,35 @@
-package memTable
+package skiplist
 
 import (
 	"fmt"
 	"math/rand"
 	"qlsm/kv"
+	"qlsm/memTable"
 	"sync"
 )
 
 const maxLevel = 32
 const pFactor = 0.25
 
-type SLNode struct {
+type Node struct {
 	KV      kv.Data
-	forward []*SLNode
+	forward []*Node
 }
 
 type SL struct {
-	head  *SLNode
+	head  *Node
 	level int
 	count int
 	sync.RWMutex
 }
 
-var _ MemTable = (*SL)(nil)
+var _ memTable.MemTable = (*SL)(nil)
 
-func NewSL() *SL {
+func New() *SL {
 	sl := SL{}
-	sl.head = &SLNode{
+	sl.head = &Node{
 		KV:      kv.Data{Key: "", Value: nil, Deleted: true},
-		forward: make([]*SLNode, maxLevel),
+		forward: make([]*Node, maxLevel),
 	}
 	return &sl
 }
@@ -70,15 +71,15 @@ func (sl *SL) Search(key string) (kv.Data, kv.SearchResult) {
 func (sl *SL) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 	sl.Lock()
 	defer sl.Unlock()
-	update := make([]*SLNode, maxLevel)
+	update := make([]*Node, maxLevel)
 	for i := range update {
 		update[i] = sl.head
 	}
 	lv := sl.randomLevel()
 	sl.level = max(sl.level, lv)
-	newNode := &SLNode{
+	newNode := &Node{
 		KV:      kv.Data{Key: key, Value: value, Deleted: false},
-		forward: make([]*SLNode, lv),
+		forward: make([]*Node, lv),
 	}
 	curr := sl.head
 	for i := sl.level - 1; i >= 0; i-- {
@@ -107,7 +108,7 @@ func (sl *SL) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 func (sl *SL) Delete(key string) (oldValue kv.Data, hasOld bool) {
 	sl.Lock()
 	defer sl.Unlock()
-	update := make([]*SLNode, maxLevel)
+	update := make([]*Node, maxLevel)
 	curr := sl.head
 	for i := sl.level - 1; i >= 0; i-- {
 		for curr.forward[i] != nil && curr.forward[i].KV.Key < key {
@@ -119,9 +120,9 @@ func (sl *SL) Delete(key string) (oldValue kv.Data, hasOld bool) {
 	if curr == nil || curr.KV.Key != key || curr.KV.Deleted {
 		return kv.Data{}, false
 	}
-	f := make([]*SLNode, len(curr.forward))
+	f := make([]*Node, len(curr.forward))
 	copy(f, curr.forward)
-	newNode := &SLNode{
+	newNode := &Node{
 		KV:      kv.Data{Key: key, Value: nil, Deleted: true},
 		forward: f,
 	}
@@ -144,25 +145,28 @@ func (sl *SL) GetValues() (values []kv.Data) {
 	return values
 }
 
-func (sl *SL) Swap() MemTable {
+func (sl *SL) Swap() memTable.MemTable {
 	//sl.Lock()
 	//defer sl.Unlock()
-	//newSL := NewSL()
+	//newSL := New()
 	//newSL.head = sl.head
 	//newSL.count = sl.count
 	//sl.head = nil
 	//sl.count = 0
 	sl.Lock()
 	defer sl.Unlock()
+	// 生成tmpSL
 	tmpSL := &SL{}
-	tmpSL.level = sl.level
 	tmpSL.count = sl.count
+	tmpSL.level = sl.level
 	tmpSL.head = sl.head
+
+	// 将 sl 初始化
 	sl.count = 0
 	sl.level = 0
-	sl.head = &SLNode{
+	sl.head = &Node{
 		KV:      kv.Data{Key: "", Value: nil, Deleted: true},
-		forward: make([]*SLNode, maxLevel),
+		forward: make([]*Node, maxLevel),
 	}
 	return tmpSL
 }
