@@ -30,8 +30,8 @@ func main() {
 		DataDir:       `D:\项目\lsm数据测试目录`,
 		Level0Size:    100,
 		PartSize:      4,
-		Threshold:     3000,
-		CheckInterval: 3,
+		Threshold:     10000,
+		CheckInterval: 1,
 	})
 	insert()
 	queryAll()

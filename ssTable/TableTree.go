@@ -1,7 +1,6 @@
 package ssTable
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path"
@@ -59,6 +58,7 @@ func (tt *TablesTree) Insert(t *SsTable, level int) (index int) {
 	defer tt.Unlock()
 	curr := tt.levels[level]
 	newNode := &tableNode{table: t}
+	// 简单的按序插入逻辑
 	if curr == nil {
 		tt.levels[level] = newNode
 	} else {
@@ -83,7 +83,7 @@ func (tt *TablesTree) Init(dir string) {
 	for i := 1; i < 10; i++ {
 		levelMaxSize[i] = levelMaxSize[i-1] * 10
 	}
-	// 加载 db 文件
+	// 加载各层 db 文件
 	tt.levels = make([]*tableNode, 10)
 	files, err := os.ReadDir(dir)
 	if err != nil {
@@ -98,14 +98,15 @@ func (tt *TablesTree) Init(dir string) {
 
 // 加载一个 db 文件到 TablesTree 中
 func (tt *TablesTree) loadDBFile(path string) {
-	log.Println("start loading the ", path)
+	log.Println("start loading the", path)
 	start := time.Now()
 	defer func() {
-		log.Println("finish loading the ", path, ", consumption of time: ", time.Since(start))
+		log.Println("finish loading the ", path, ", consumption of time:", time.Since(start))
 	}()
-
+	// 获取 db 对应的 level 和 index 信息
 	level, index, err := getSsTableInfo(filepath.Base(path))
 	if err != nil {
+		log.Println("can not load the", path)
 		return
 	}
 	t := &SsTable{}
@@ -124,13 +125,4 @@ func (tt *TablesTree) loadDBFile(path string) {
 	}
 	newNode.next = curr.next
 	curr.next = newNode
-}
-
-// 获取 db 对应的 level 和 index 信息
-func getSsTableInfo(filename string) (level int, index int, err error) {
-	n, err := fmt.Sscanf(filename, "%d.%d.db", &level, &index)
-	if n != 2 || err != nil {
-		return 0, 0, fmt.Errorf("incorrect data file filename for SsTable: %q", filename)
-	}
-	return level, index, nil
 }

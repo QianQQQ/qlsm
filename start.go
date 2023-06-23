@@ -15,10 +15,10 @@ func Start(cfg config.Config) {
 		return
 	}
 
-	log.Println("Loading the Configuration...")
+	log.Println("loading the configuration...")
 	config.Init(cfg)
 
-	log.Println("Initializing the db...")
+	log.Println("initializing DB...")
 	initDatabase(cfg.DataDir)
 
 	go Check()
@@ -27,19 +27,19 @@ func Start(cfg config.Config) {
 // 初始化 DB, 从磁盘文件中还原 SsTable、Wal、MemTable等
 func initDatabase(dir string) {
 	if _, err := os.Stat(dir); err != nil {
-		log.Printf("The %s directory does not exist.\n The %s directory is being created.\n", dir, dir)
+		log.Printf("the %s directory does not exist.\n the %s directory is being created.\n", dir, dir)
 		if err = os.Mkdir(dir, 0666); err != nil {
-			log.Panicln("Can not create the db directory:", err)
+			log.Panicln("can not create the db directory:", err)
 		}
 	}
 	db = &DB{
-		MemoryTree: memTable.NewSL(),
+		MemTable:   memTable.NewSL(),
 		Wal:        &wal.Wal{},
-		TableTree:  &ssTable.TablesTree{},
+		TablesTree: &ssTable.TablesTree{},
 	}
 
 	log.Println("loading Wal, recovery for MemTable...")
-	db.MemoryTree = db.Wal.Load(dir)
-	log.Println("Loading db...")
-	db.TableTree.Init(dir)
+	db.MemTable = db.Wal.Load(dir)
+	log.Println("loading DB...")
+	db.TablesTree.Init(dir)
 }

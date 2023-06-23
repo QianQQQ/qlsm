@@ -8,15 +8,15 @@ import (
 
 // Get 获取一个元素
 func Get[T any](key string) (T, bool) {
-	//log.Print("Get ", key)
+	//log.Println("Get ", key)
 	// 先查内存表
-	value, result := db.MemoryTree.Search(key)
+	value, result := db.MemTable.Search(key)
 	if result == kv.Success {
 		return getInstance[T](value.Value)
 	}
 	// 再逐层查 SsTable 文件
-	if db.TableTree != nil {
-		value, result = db.TableTree.Search(key)
+	if db.TablesTree != nil {
+		value, result = db.TablesTree.Search(key)
 		if result == kv.Success {
 			return getInstance[T](value.Value)
 		}
@@ -27,13 +27,13 @@ func Get[T any](key string) (T, bool) {
 
 // Set 插入元素
 func Set[T any](key string, value T) bool {
-	//log.Print("Insert ", key, ",")
+	//log.Println("Insert ", key, ",")
 	data, err := json.Marshal(value)
 	if err != nil {
 		log.Println(err)
 		return false
 	}
-	_, _ = db.MemoryTree.Set(key, data)
+	db.MemTable.Set(key, data)
 	// 写入 wal.log
 	db.Wal.Write(kv.Data{
 		Key:     key,
@@ -46,7 +46,7 @@ func Set[T any](key string, value T) bool {
 // DeleteAndGet 删除元素并尝试获取旧的值
 func DeleteAndGet[T any](key string) (T, bool) {
 	//log.Print("Delete ", key)
-	value, success := db.MemoryTree.Delete(key)
+	value, success := db.MemTable.Delete(key)
 	if success {
 		// 写入 wal.log
 		db.Wal.Write(kv.Data{
@@ -63,7 +63,7 @@ func DeleteAndGet[T any](key string) (T, bool) {
 // Delete 删除元素
 func Delete(key string) {
 	//log.Print("Delete ", key)
-	db.MemoryTree.Delete(key)
+	db.MemTable.Delete(key)
 	db.Wal.Write(kv.Data{
 		Key:     key,
 		Value:   nil,

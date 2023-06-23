@@ -28,7 +28,7 @@ func (tt *TablesTree) getCount(level int) int {
 func (tt *TablesTree) majorCompaction() {
 	cfg := config.GetConfig()
 	for levelIndex := range tt.levels {
-		tableSize := int(tt.GetLevelSize(levelIndex) / 1000 / 1000) // 转为 MB
+		tableSize := int(tt.getLevelSize(levelIndex) >> 20) // 转为 MB
 		if tt.getCount(levelIndex) > cfg.PartSize || tableSize > levelMaxSize[levelIndex] {
 			tt.majorCompactionLevel(levelIndex)
 		}
@@ -44,7 +44,7 @@ func (tt *TablesTree) majorCompactionLevel(level int) {
 		log.Println("completed compression, consumption of time", time.Since(start))
 	}()
 
-	log.Printf("Compressing layer %d.db files\n", level)
+	log.Printf("compressing layer %d.db files\n", level)
 	// 用于加载一个 SsTable 的数据区到缓存中
 	tableCache := make([]byte, levelMaxSize[level])
 	curr := tt.levels[level]

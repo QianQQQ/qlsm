@@ -7,7 +7,7 @@ type Config struct {
 	Level0Size    int    // 0 层所有 SsTable 文件大小总和的最大值 (MB)
 	PartSize      int    // 每层 SsTable 数量的最大值阈值
 	Threshold     int    // MemTable 中 kv 最大数量
-	CheckInterval int    // 检查 Compaction 的时间间隔
+	CheckInterval int    // 检查 compaction 的时间间隔
 }
 
 var config Config

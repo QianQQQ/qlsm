@@ -8,7 +8,6 @@ import (
 	"qlsm/kv"
 	"sort"
 	"strconv"
-	"sync"
 )
 
 func (tt *TablesTree) CreateNewTable(values []kv.Data) {
@@ -23,7 +22,7 @@ func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 	for _, value := range values {
 		data, err := json.Marshal(value)
 		if err != nil {
-			log.Println("Failed to Insert Key:", value.Key, err)
+			log.Println("failed to Insert Key:", value.Key, err)
 			continue
 		}
 		keys = append(keys, value.Key)
@@ -39,7 +38,7 @@ func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 	// 生成稀疏索引区
 	indexArea, err := json.Marshal(positions)
 	if err != nil {
-		log.Fatal("An SsTable file cannot be created,", err)
+		log.Fatal("an SsTable file cannot be created,", err)
 	}
 
 	meta := MetaInfo{
@@ -54,11 +53,10 @@ func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 		metaInfo:    meta,
 		sparseIndex: positions,
 		sortIndex:   keys,
-		lock:        &sync.RWMutex{},
 	}
 
 	index := tt.Insert(table, level)
-	log.Printf("Create a new SsTable, level: %d ,index: %d\r\n", level, index)
+	log.Printf("Create a new SsTable, level: %d, index: %d\r\n", level, index)
 	con := config.GetConfig()
 	filePath := con.DataDir + "/" + strconv.Itoa(level) + "." + strconv.Itoa(index) + ".db"
 	table.filepath = filePath
@@ -67,7 +65,7 @@ func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 	// 以只读的形式打开文件
 	f, err := os.OpenFile(table.filepath, os.O_RDONLY, 0666)
 	if err != nil {
-		log.Println(" error open file ", table.filepath)
+		log.Println("can not open file", table.filepath)
 		panic(err)
 	}
 	table.f = f

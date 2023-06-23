@@ -7,8 +7,8 @@ import (
 )
 
 type DB struct {
-	MemoryTree memTable.MemTable
-	TableTree  *ssTable.TablesTree
+	MemTable   memTable.MemTable
+	TablesTree *ssTable.TablesTree
 	Wal        *wal.Wal
 }
 

@@ -29,7 +29,7 @@ type SsTable struct {
 	metaInfo    MetaInfo            // SsTable 元数据
 	sparseIndex map[string]Position // 文件的稀疏索引列表
 	sortIndex   []string            // 排序后的 key 列表
-	lock        sync.Locker
+	sync.Mutex
 }
 
 // MetaInfo 是 SsTable 的元数据, 存储在文件的末尾
@@ -52,11 +52,11 @@ type Position struct {
 func (t *SsTable) Load(filepath string) {
 	t.filepath = filepath
 	t.sparseIndex = map[string]Position{}
-	t.lock = &sync.Mutex{}
+
 	// 加载文件句柄
 	f, err := os.OpenFile(t.filepath, os.O_RDONLY, 0666)
 	if err != nil {
-		log.Panicln("can not open file ", t.filepath, ": ", err.Error())
+		log.Panicln("can not open file", t.filepath, ":", err.Error())
 	}
 	t.f = f
 
@@ -66,25 +66,21 @@ func (t *SsTable) Load(filepath string) {
 		log.Panicln("can not read metadata for version:", err.Error())
 	}
 	_ = binary.Read(f, binary.LittleEndian, &t.metaInfo.version)
-
 	_, err = f.Seek(-8*4, 2)
 	if err != nil {
 		log.Panicln("can not read metadata for dataStart:", err.Error())
 	}
 	_ = binary.Read(f, binary.LittleEndian, &t.metaInfo.dataStart)
-
 	_, err = f.Seek(-8*3, 2)
 	if err != nil {
 		log.Panicln("can not read metadata for dataLen:", err.Error())
 	}
 	_ = binary.Read(f, binary.LittleEndian, &t.metaInfo.dataLen)
-
 	_, err = f.Seek(-8*2, 2)
 	if err != nil {
 		log.Panicln("can not read metadata for indexStart:", err.Error())
 	}
 	_ = binary.Read(f, binary.LittleEndian, &t.metaInfo.indexStart)
-
 	_, err = f.Seek(-8*1, 2)
 	if err != nil {
 		log.Panicln("can not read metadata for indexLen:", err.Error())
@@ -113,17 +109,17 @@ func (t *SsTable) Load(filepath string) {
 // Search 先从 sortIndex 二分查找 Key, 如果存在, 通过 sparseIndex 找到 Position, 再从数据区加载
 // sortIndex 与 sparseIndex 常驻内存
 func (t *SsTable) Search(key string) (value kv.Data, result kv.SearchResult) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
+	t.Lock()
+	defer t.Unlock()
 
+	// 二分查找 key 是否存在
 	position := Position{Start: -1}
 	l, r := 0, len(t.sortIndex)-1
-
-	// 二分查找法，查找 key 是否存在
 	for l <= r {
 		m := (l + r) / 2
 		if t.sortIndex[m] == key {
 			position = t.sparseIndex[key]
+			// 已删除
 			if position.Deleted {
 				return kv.Data{}, kv.Deleted
 			}
@@ -135,23 +131,23 @@ func (t *SsTable) Search(key string) (value kv.Data, result kv.SearchResult) {
 		}
 	}
 
+	// key找不到
 	if position.Start == -1 {
 		return kv.Data{}, kv.None
 	}
 
-	// Todo：如果读取失败，需要增加错误处理过程
 	// 从磁盘文件中查找
 	bs := make([]byte, position.Len)
 	if _, err := t.f.Seek(position.Start, 0); err != nil {
-		log.Println("Can not seek for data:", err)
+		log.Println("can not seek for data:", err)
 		return kv.Data{}, kv.None
 	}
 	if _, err := t.f.Read(bs); err != nil {
-		log.Println("Can not read for data:", err)
+		log.Println("can not read for data:", err)
 		return kv.Data{}, kv.None
 	}
 	if err := json.Unmarshal(bs, &value); err != nil {
-		log.Println(err)
+		log.Println("can not unmarshal for data:", err)
 		return kv.Data{}, kv.None
 	}
 	return value, kv.Success
