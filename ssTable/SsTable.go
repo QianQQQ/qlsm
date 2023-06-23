@@ -3,15 +3,16 @@ package ssTable
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"qlsm/kv"
-	"sort"
 	"sync"
+	"time"
 )
 
 /*
-索引是从数据区开始！
+索引从数据区开始
 0 ─────────────────────────────────────────────────────────►
 ◄──────────────────────────
           dataLen           ◄────────────────
@@ -28,7 +29,6 @@ type SsTable struct {
 	filepath    string              // SsTable 文件路径
 	metaInfo    MetaInfo            // SsTable 元数据
 	sparseIndex map[string]Position // 文件的稀疏索引列表
-	sortIndex   []string            // 排序后的 key 列表
 	sync.Mutex
 }
 
@@ -43,9 +43,9 @@ type MetaInfo struct {
 
 // Position 存储在 SparseIndex 中, 表示 KV 的起始位置和长度
 type Position struct {
-	Start   int64
-	Len     int64
-	Deleted bool
+	Start   int64 // 起始位置
+	Len     int64 // 长度
+	Deleted bool  //删除标志
 }
 
 // Load 将 db 文件 加载成 SsTable
@@ -98,48 +98,36 @@ func (t *SsTable) Load(filepath string) {
 	if err = json.Unmarshal(bs, &t.sparseIndex); err != nil {
 		log.Panicln("can not unmarshal for sparseIndex:", err.Error())
 	}
-	t.sortIndex = make([]string, 0, len(t.sparseIndex))
-	for k := range t.sparseIndex {
-		t.sortIndex = append(t.sortIndex, k)
-	}
-	sort.Strings(t.sortIndex)
 	_, _ = f.Seek(0, 0)
 }
 
-// Search 先从 sortIndex 二分查找 Key, 如果存在, 通过 sparseIndex 找到 Position, 再从数据区加载
-// sortIndex 与 sparseIndex 常驻内存
+// Search 先通过 sparseIndex 找到 Position, 再从数据区加载
+// sparseIndex 常驻内存
 func (t *SsTable) Search(key string) (value kv.Data, result kv.SearchResult) {
 	t.Lock()
 	defer t.Unlock()
 
-	// 二分查找 key 是否存在
-	position := Position{Start: -1}
-	l, r := 0, len(t.sortIndex)-1
-	for l <= r {
-		m := (l + r) / 2
-		if t.sortIndex[m] == key {
-			position = t.sparseIndex[key]
-			// 已删除
-			if position.Deleted {
-				return kv.Data{}, kv.Deleted
-			}
-			break
-		} else if t.sortIndex[m] < key {
-			l = m + 1
-		} else if t.sortIndex[m] > key {
-			r = m - 1
-		}
-	}
-
-	// key找不到
-	if position.Start == -1 {
+	position, exist := t.sparseIndex[key]
+	if !exist {
 		return kv.Data{}, kv.None
 	}
-
+	if position.Deleted {
+		return kv.Data{}, kv.Deleted
+	}
+	if t.f == nil {
+		fmt.Println(t.f)
+		t.Unlock()
+		time.Sleep(time.Microsecond * 100)
+		value, result = t.Search(key)
+		fmt.Println(key, value, result, t.f)
+		t.Lock()
+		return
+	}
 	// 从磁盘文件中查找
 	bs := make([]byte, position.Len)
 	if _, err := t.f.Seek(position.Start, 0); err != nil {
-		log.Println("can not seek for data:", err)
+		log.Println(position, t.f, t.filepath)
+		log.Println("can not seek for data:", key, err)
 		return kv.Data{}, kv.None
 	}
 	if _, err := t.f.Read(bs); err != nil {

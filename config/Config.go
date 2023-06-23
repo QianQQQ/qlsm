@@ -2,6 +2,7 @@ package config
 
 import "sync"
 
+// Config 是 lsm 的配置文件
 type Config struct {
 	DataDir       string // 数据目录
 	Level0Size    int    // 0 层所有 SsTable 文件大小总和的最大值 (MB)

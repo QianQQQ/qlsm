@@ -47,11 +47,26 @@ func writeDataToFile(filepath string, dataArea []byte, indexArea []byte, metaInf
 	if _, err = f.Write(indexArea); err != nil {
 		log.Fatal("can not write indexArea:", err)
 	}
-	_ = binary.Write(f, binary.LittleEndian, &metaInfo.version)
-	_ = binary.Write(f, binary.LittleEndian, &metaInfo.dataStart)
-	_ = binary.Write(f, binary.LittleEndian, &metaInfo.dataLen)
-	_ = binary.Write(f, binary.LittleEndian, &metaInfo.indexStart)
-	_ = binary.Write(f, binary.LittleEndian, &metaInfo.indexLen)
+	err = binary.Write(f, binary.LittleEndian, &metaInfo.version)
+	if err != nil {
+		log.Fatal("can not write meta")
+	}
+	err = binary.Write(f, binary.LittleEndian, &metaInfo.dataStart)
+	if err != nil {
+		log.Fatal("can not write meta")
+	}
+	err = binary.Write(f, binary.LittleEndian, &metaInfo.dataLen)
+	if err != nil {
+		log.Fatal("can not write meta")
+	}
+	err = binary.Write(f, binary.LittleEndian, &metaInfo.indexStart)
+	if err != nil {
+		log.Fatal("can not write meta")
+	}
+	err = binary.Write(f, binary.LittleEndian, &metaInfo.indexLen)
+	if err != nil {
+		log.Fatal("can not write meta")
+	}
 	if err = f.Sync(); err != nil {
 		log.Fatal("can not write metaInfo:", err)
 	}

@@ -6,7 +6,6 @@ import (
 	"os"
 	"qlsm/config"
 	"qlsm/kv"
-	"sort"
 	"strconv"
 )
 
@@ -16,7 +15,6 @@ func (tt *TablesTree) CreateNewTable(values []kv.Data) {
 
 func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 	// 生成数据区
-	keys := make([]string, 0, len(values))
 	positions := map[string]Position{}
 	var dataArea []byte
 	for _, value := range values {
@@ -25,7 +23,6 @@ func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 			log.Println("failed to Insert Key:", value.Key, err)
 			continue
 		}
-		keys = append(keys, value.Key)
 		positions[value.Key] = Position{
 			Start:   int64(len(dataArea)),
 			Len:     int64(len(data)),
@@ -33,7 +30,6 @@ func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 		}
 		dataArea = append(dataArea, data...)
 	}
-	sort.Strings(keys)
 
 	// 生成稀疏索引区
 	indexArea, err := json.Marshal(positions)
@@ -52,11 +48,10 @@ func (tt *TablesTree) createTable(values []kv.Data, level int) *SsTable {
 	table := &SsTable{
 		metaInfo:    meta,
 		sparseIndex: positions,
-		sortIndex:   keys,
 	}
 
 	index := tt.Insert(table, level)
-	log.Printf("Create a new SsTable, level: %d, index: %d\r\n", level, index)
+	log.Printf("create a new SsTable, level: %d, index: %d\n", level, index)
 	con := config.GetConfig()
 	filePath := con.DataDir + "/" + strconv.Itoa(level) + "." + strconv.Itoa(index) + ".db"
 	table.filepath = filePath
