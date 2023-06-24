@@ -50,6 +50,7 @@ func initDatabase(dir string) {
 
 	log.Println("loading Wal, recovering MemTable...")
 	db.MemTable = db.Wal.Load(dir)
+
 	log.Println("loading DB...")
 	db.TablesTree.Init(dir)
 }

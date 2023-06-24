@@ -39,38 +39,33 @@ func (tt *TablesTree) getLevelSize(level int) (size int64) {
 func writeDataToFile(filepath string, dataArea []byte, indexArea []byte, metaInfo MetaInfo) {
 	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
-		log.Fatal("can not create file:", err)
+		log.Fatal("fail to create file:", err)
 	}
 	if _, err = f.Write(dataArea); err != nil {
-		log.Fatal("can not write dataArea:", err)
+		log.Fatal("fail to write dataArea:", err)
 	}
 	if _, err = f.Write(indexArea); err != nil {
-		log.Fatal("can not write indexArea:", err)
+		log.Fatal("fail to write indexArea:", err)
 	}
-	err = binary.Write(f, binary.LittleEndian, &metaInfo.version)
-	if err != nil {
-		log.Fatal("can not write meta")
+	if err = binary.Write(f, binary.LittleEndian, &metaInfo.version); err != nil {
+		log.Fatal("fail to write metaInfo.version:", err)
 	}
-	err = binary.Write(f, binary.LittleEndian, &metaInfo.dataStart)
-	if err != nil {
-		log.Fatal("can not write meta")
+	if err = binary.Write(f, binary.LittleEndian, &metaInfo.dataStart); err != nil {
+		log.Fatal("fail to write metaInfo.dataStart:", err)
 	}
-	err = binary.Write(f, binary.LittleEndian, &metaInfo.dataLen)
-	if err != nil {
-		log.Fatal("can not write meta")
+	if err = binary.Write(f, binary.LittleEndian, &metaInfo.dataLen); err != nil {
+		log.Fatal("fail to write metaInfo.dataLen:", err)
 	}
-	err = binary.Write(f, binary.LittleEndian, &metaInfo.indexStart)
-	if err != nil {
-		log.Fatal("can not write meta")
+	if err = binary.Write(f, binary.LittleEndian, &metaInfo.indexStart); err != nil {
+		log.Fatal("fail to write metaInfo.indexStart:", err)
 	}
-	err = binary.Write(f, binary.LittleEndian, &metaInfo.indexLen)
-	if err != nil {
-		log.Fatal("can not write meta")
+	if err = binary.Write(f, binary.LittleEndian, &metaInfo.indexLen); err != nil {
+		log.Fatal("fail to write metaInfo.indexLen:", err)
 	}
 	if err = f.Sync(); err != nil {
-		log.Fatal("can not write metaInfo:", err)
+		log.Fatal("fail to write metaInfo:", err)
 	}
 	if err = f.Close(); err != nil {
-		log.Fatal("can not close .db:", err)
+		log.Fatal("fail to close .db:", err)
 	}
 }

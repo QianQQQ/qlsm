@@ -8,27 +8,24 @@ import (
 
 func Check() {
 	cfg := config.GetConfig()
-	log.Println("performing background checks...")
 	checkMemory()
-	db.TablesTree.Check()
-	ticker := time.Tick(time.Duration(cfg.CheckInterval) * time.Second)
+	db.TablesTree.Compaction()
+	ticker := time.Tick(time.Duration(cfg.CheckInterval) * time.Millisecond)
 	for range ticker {
-		log.Println("performing background checks...")
 		checkMemory()
-		db.TablesTree.Check()
+		db.TablesTree.Compaction()
 	}
 }
 
 func checkMemory() {
 	cfg := config.GetConfig()
 	count := db.MemTable.GetCount()
-	log.Println("count is", count)
 	if count < cfg.Threshold {
 		return
 	}
-	log.Println("compressing memory")
-	tmpTree := db.MemTable.Swap()
+	log.Printf("MemTable has %d Nodes, compressing memory\n", count)
+	tmp := db.MemTable.Swap()
 	// 将内存表存储到 SsTable 中
-	db.TablesTree.CreateNewTable(tmpTree.GetValues())
+	db.TablesTree.CreateTable(tmp.GetValues(), 0)
 	db.Wal.Reset()
 }

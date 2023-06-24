@@ -3,6 +3,7 @@ package bst
 import (
 	"log"
 	"qlsm/kv"
+	"qlsm/memTable"
 	"sync"
 )
 
@@ -47,6 +48,7 @@ func (t *BST) Search(key string) (kv.Data, kv.SearchResult) {
 			curr = curr.Right
 		}
 	}
+
 	return kv.Data{}, kv.None
 }
 
@@ -81,8 +83,6 @@ func (t *BST) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 			curr.KV.Deleted = false
 			// 返回旧值
 			if oldKV.Deleted {
-				// FIXME 需要增加
-				t.count++
 				return kv.Data{}, false
 			} else {
 				return *oldKV, true
@@ -151,8 +151,7 @@ func (t *BST) Delete(key string) (oldValue kv.Data, hasOld bool) {
 			// 如果不存在此 key，则插入一个删除标记
 			if curr.Left == nil {
 				curr.Left = newNode
-				// FIXME 为什么要++
-				//t.count++
+				t.count++
 			}
 			// 继续对比下一层
 			curr = curr.Left
@@ -160,8 +159,7 @@ func (t *BST) Delete(key string) (oldValue kv.Data, hasOld bool) {
 			// 如果不存在此 key，则插入一个删除标记
 			if curr.Right == nil {
 				curr.Right = newNode
-				// FIXME 为什么要++
-				//t.count++
+				t.count++
 			}
 			// 继续对比下一层
 			curr = curr.Right
@@ -194,10 +192,9 @@ func (t *BST) GetValues() (values []kv.Data) {
 	return values
 }
 
-func (t *BST) Swap() *BST {
+func (t *BST) Swap() memTable.MemTable {
 	t.Lock()
 	defer t.Unlock()
-
 	newTree := &BST{}
 	newTree.root = t.root
 	newTree.count = t.count

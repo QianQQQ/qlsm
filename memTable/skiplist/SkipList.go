@@ -1,7 +1,6 @@
 package skiplist
 
 import (
-	"fmt"
 	"math/rand"
 	"qlsm/kv"
 	"qlsm/memTable"
@@ -68,7 +67,7 @@ func (sl *SL) Search(key string) (kv.Data, kv.SearchResult) {
 }
 
 // Set 设置 Key 的值并返回旧值
-func (sl *SL) Set(key string, value []byte, deleted bool) (oldValue kv.Data, hasOld bool) {
+func (sl *SL) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 	sl.Lock()
 	defer sl.Unlock()
 	update := make([]*Node, maxLevel)
@@ -78,7 +77,7 @@ func (sl *SL) Set(key string, value []byte, deleted bool) (oldValue kv.Data, has
 	lv := sl.randomLevel()
 	sl.level = max(sl.level, lv)
 	newNode := &Node{
-		KV:      kv.Data{Key: key, Value: value, Deleted: deleted},
+		KV:      kv.Data{Key: key, Value: value, Deleted: false},
 		forward: make([]*Node, lv),
 	}
 	curr := sl.head
@@ -106,25 +105,40 @@ func (sl *SL) Set(key string, value []byte, deleted bool) (oldValue kv.Data, has
 
 // Delete 删除 key 并返回旧值
 func (sl *SL) Delete(key string) (oldValue kv.Data, hasOld bool) {
-	//sl.Lock()
-	//defer sl.Unlock()
+	sl.Lock()
+	defer sl.Unlock()
+	update := make([]*Node, maxLevel)
+	for i := range update {
+		update[i] = sl.head
+	}
 	curr := sl.head
 	for i := sl.level - 1; i >= 0; i-- {
 		for curr.forward[i] != nil && curr.forward[i].KV.Key < key {
 			curr = curr.forward[i]
 		}
+		update[i] = curr
 	}
-	next := curr.forward[0]
+	curr = curr.forward[0]
 	// 如果有这个节点
-	if next != nil && next.KV.Key == key {
-		if next.KV.Deleted {
+	if curr != nil && curr.KV.Key == key {
+		if curr.KV.Deleted {
 			return kv.Data{}, false
 		} else {
-			curr.forward[0].KV.Deleted = true
-			return *next.KV.Copy(), true
+			curr.KV.Deleted = true
+			return *curr.KV.Copy(), true
 		}
 	}
-	sl.Set(key, nil, true)
+	// 没有这节点的话就要插入
+	lv := sl.randomLevel()
+	sl.level = max(sl.level, lv)
+	newNode := &Node{
+		KV:      kv.Data{Key: key, Value: nil, Deleted: true},
+		forward: make([]*Node, lv),
+	}
+	for i, node := range update[:lv] {
+		newNode.forward[i] = node.forward[i]
+		node.forward[i] = newNode
+	}
 	return kv.Data{}, false
 }
 
@@ -141,13 +155,6 @@ func (sl *SL) GetValues() (values []kv.Data) {
 }
 
 func (sl *SL) Swap() memTable.MemTable {
-	//sl.Lock()
-	//defer sl.Unlock()
-	//newSL := New()
-	//newSL.head = sl.head
-	//newSL.count = sl.count
-	//sl.head = nil
-	//sl.count = 0
 	sl.Lock()
 	defer sl.Unlock()
 	// 生成tmpSL
@@ -164,14 +171,6 @@ func (sl *SL) Swap() memTable.MemTable {
 		forward: make([]*Node, maxLevel),
 	}
 	return tmpSL
-}
-
-func (sl *SL) Show() {
-	curr := sl.head
-	for curr != nil {
-		fmt.Println(curr.KV.Key)
-		curr = curr.forward[0]
-	}
 }
 
 func max(i, j int) int {
