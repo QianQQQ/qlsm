@@ -18,6 +18,7 @@ func (tt *TablesTree) Compaction() {
 		tableSize := int(tt.getLevelSize(levelIndex) >> 20)
 		// 如果 db 文件数量 > PartSize 或者 该层 db 文件 总大小 > levelMaxSize, 触发对应层的 compaction
 		if tt.getCount(levelIndex) >= cfg.PartSize || tableSize >= levelMaxSize[levelIndex] {
+			log.Printf("compress level %d Sstables, the tableSize is %d MB", levelIndex, tableSize)
 			tt.majorCompactionLevel(levelIndex)
 		}
 	}
@@ -25,7 +26,6 @@ func (tt *TablesTree) Compaction() {
 
 // 压缩当前层的文件到下一层, 只能被 Compaction() 调用
 func (tt *TablesTree) majorCompactionLevel(level int) {
-	log.Println("compressing layer", level, "Sstables")
 	start := time.Now()
 	defer func() {
 		log.Println("completed compression, consumption of time", time.Since(start))
@@ -38,21 +38,21 @@ func (tt *TablesTree) majorCompactionLevel(level int) {
 	tt.Lock()
 	for curr != nil {
 		t := curr.table
-		newSlice := make([]byte, t.metaInfo.dataLen)
+		data := make([]byte, t.metaInfo.dataLen)
 		// 读取 SsTable 的数据区
 		if _, err := t.f.Seek(0, 0); err != nil {
 			log.Println("fail to open file ", t.filepath)
 			panic(err)
 		}
-		if _, err := t.f.Read(newSlice); err != nil {
+		if _, err := t.f.Read(data); err != nil {
 			log.Println("fail to read file ", t.filepath)
 			panic(err)
 		}
 		// 读取每一个元素
-		for k, position := range t.sparseIndex {
-			if !position.Deleted {
+		for k, p := range t.sparseIndex {
+			if !p.Deleted {
 				var value kv.Data
-				if err := json.Unmarshal(newSlice[position.Start:(position.Start+position.Len)], &value); err != nil {
+				if err := json.Unmarshal(data[p.Start:(p.Start+p.Len)], &value); err != nil {
 					log.Fatal(err)
 				}
 				mt.Set(k, value.Value)

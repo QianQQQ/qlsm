@@ -101,7 +101,6 @@ func (tt *TablesTree) Init(dir string) {
 
 // 加载一个 db 文件到 TablesTree 中
 func (tt *TablesTree) loadDBFile(path string) {
-	log.Println("start loading the", path)
 	start := time.Now()
 	defer func() {
 		log.Printf("finish loading the %s, consumption of time: %v", path, time.Since(start))

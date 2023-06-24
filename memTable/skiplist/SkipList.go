@@ -1,6 +1,7 @@
 package skiplist
 
 import (
+	"log"
 	"math/rand"
 	"qlsm/kv"
 	"qlsm/memTable"
@@ -74,12 +75,6 @@ func (sl *SL) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 	for i := range update {
 		update[i] = sl.head
 	}
-	lv := sl.randomLevel()
-	sl.level = max(sl.level, lv)
-	newNode := &Node{
-		KV:      kv.Data{Key: key, Value: value, Deleted: false},
-		forward: make([]*Node, lv),
-	}
 	curr := sl.head
 	for i := sl.level - 1; i >= 0; i-- {
 		for curr.forward[i] != nil && curr.forward[i].KV.Key < key {
@@ -87,20 +82,30 @@ func (sl *SL) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 		}
 		update[i] = curr
 	}
-	flag := true
 	curr = curr.forward[0]
-	if curr == nil || curr.KV.Key != key {
-		sl.count++
-		flag = false
+	// 如果有这个节点
+	if curr != nil && curr.KV.Key == key {
+		if curr.KV.Deleted {
+			curr.KV.Deleted = false
+			return kv.Data{}, false
+		} else {
+			oldValue = *curr.KV.Copy()
+			curr.KV.Value = value
+			return oldValue, true
+		}
+	}
+	sl.count++
+	lv := sl.randomLevel()
+	sl.level = max(sl.level, lv)
+	newNode := &Node{
+		KV:      kv.Data{Key: key, Value: value, Deleted: false},
+		forward: make([]*Node, lv),
 	}
 	for i, node := range update[:lv] {
 		newNode.forward[i] = node.forward[i]
 		node.forward[i] = newNode
 	}
-	if !flag {
-		return kv.Data{}, false
-	}
-	return *curr.KV.Copy(), true
+	return kv.Data{}, false
 }
 
 // Delete 删除 key 并返回旧值
@@ -129,6 +134,7 @@ func (sl *SL) Delete(key string) (oldValue kv.Data, hasOld bool) {
 		}
 	}
 	// 没有这节点的话就要插入
+	sl.count++
 	lv := sl.randomLevel()
 	sl.level = max(sl.level, lv)
 	newNode := &Node{
@@ -171,6 +177,14 @@ func (sl *SL) Swap() memTable.MemTable {
 		forward: make([]*Node, maxLevel),
 	}
 	return tmpSL
+}
+
+func (sl *SL) Show() {
+	curr := sl.head.forward[0]
+	for curr != nil {
+		log.Println(curr.KV.Key, curr.KV.Deleted)
+		curr = curr.forward[0]
+	}
 }
 
 func max(i, j int) int {

@@ -20,7 +20,7 @@ func main() {
 		DataDir:       `D:\项目\lsm数据测试目录`,
 		Level0Size:    100,
 		PartSize:      4,
-		Threshold:     10000,
+		Threshold:     5000000,
 		CheckInterval: 100,
 	})
 	d1 := insert()
@@ -81,7 +81,6 @@ func queryAll() (duration time.Duration) {
 						want := string(key) + "abcdefghijklmnopqrstuvwxyz"
 						if ans, ok := lsm.Get[TestValue](string(key)); !ok || ans.D != want {
 							count++
-							log.Println("error in get for", key)
 						}
 					}
 				}
@@ -109,7 +108,7 @@ func queryAbsent() (duration time.Duration) {
 						key[4] = 'a' + byte(e)
 						if _, ok := lsm.Get[TestValue](string(key)); ok {
 							count++
-							log.Println("error in get for", key)
+							log.Fatal("error in get for", string(key))
 						}
 					}
 				}

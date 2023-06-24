@@ -46,7 +46,7 @@ type Position struct {
 	Deleted bool  //删除标志
 }
 
-// Load 将 db 文件 加载成 SsTable
+// Load 将 db 文件 加载成 SsTable, sparseIndex 常驻内存
 func (t *SsTable) Load(filepath string) {
 	t.filepath = filepath
 	t.sparseIndex = map[string]Position{}
@@ -99,7 +99,6 @@ func (t *SsTable) Load(filepath string) {
 }
 
 // Search 先通过 sparseIndex 找到 Position, 再从数据区加载
-// sparseIndex 常驻内存
 func (t *SsTable) Search(key string) (value kv.Data, result kv.SearchResult) {
 	t.Lock()
 	defer t.Unlock()
