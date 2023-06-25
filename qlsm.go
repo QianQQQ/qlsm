@@ -8,12 +8,14 @@ import (
 	"qlsm/memTable/skiplist"
 	"qlsm/ssTable"
 	"qlsm/wal"
+	"sync"
 )
 
 type DB struct {
 	MemTable   memTable.MemTable
 	TablesTree *ssTable.TablesTree
 	Wal        *wal.Wal
+	sync.Mutex
 }
 
 var db *DB
@@ -24,10 +26,10 @@ func Start(cfg config.Config) {
 		return
 	}
 
-	log.Println("loading the configuration...")
+	log.Println("load the configuration...")
 	config.Init(cfg)
 
-	log.Println("initializing DB...")
+	log.Println("initialize DB...")
 	initDatabase(cfg.DataDir)
 
 	log.Println("start checking in the background...")
@@ -37,7 +39,7 @@ func Start(cfg config.Config) {
 // 初始化 DB, 从磁盘文件中还原 SsTable, Wal, MemTable
 func initDatabase(dir string) {
 	if _, err := os.Stat(dir); err != nil {
-		log.Printf("the %s directory does not exist.\n the %s directory is being created.\n", dir, dir)
+		log.Printf("the %s directory does not exist, the %s directory is being created.\n", dir, dir)
 		if err = os.Mkdir(dir, 0666); err != nil {
 			log.Panicln("fail to create the db directory:", err)
 		}
@@ -48,9 +50,9 @@ func initDatabase(dir string) {
 		TablesTree: &ssTable.TablesTree{},
 	}
 
-	log.Println("loading Wal, recovering MemTable...")
+	log.Println("load Wal, recover MemTable...")
 	db.MemTable = db.Wal.Load(dir)
 
-	log.Println("loading DB...")
+	log.Println("load DB...")
 	db.TablesTree.Init(dir)
 }

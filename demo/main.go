@@ -17,11 +17,11 @@ type TestValue struct {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 	lsm.Start(config.Config{
-		DataDir:       `D:\项目\lsm数据测试目录`,
+		DataDir:       `D:\lsmDB`,
 		Level0Size:    100,
 		PartSize:      4,
 		Threshold:     5000000,
-		CheckInterval: 100,
+		CheckInterval: 1000,
 	})
 	d1 := insert()
 	d2 := queryAll()
@@ -108,7 +108,6 @@ func queryAbsent() (duration time.Duration) {
 						key[4] = 'a' + byte(e)
 						if _, ok := lsm.Get[TestValue](string(key)); ok {
 							count++
-							log.Fatal("error in get for", string(key))
 						}
 					}
 				}

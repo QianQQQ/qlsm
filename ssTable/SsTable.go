@@ -112,7 +112,6 @@ func (t *SsTable) Search(key string) (value kv.Data, result kv.SearchResult) {
 	// 从磁盘文件中查找
 	bs := make([]byte, position.Len)
 	if _, err := t.f.Seek(position.Start, 0); err != nil {
-
 		log.Println("fail to seek for data:", key, err)
 		return kv.Data{}, kv.None
 	}

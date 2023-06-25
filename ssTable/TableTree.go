@@ -76,15 +76,14 @@ func (tt *TablesTree) Insert(t *SsTable, level int) (index int) {
 
 // Init 初始化 TablesTree
 func (tt *TablesTree) Init(dir string) {
-	log.Println("the TablesTree starts loading...")
 	start := time.Now()
-	defer func() { log.Println("the TablesTree finishes loading, consumption of time:", time.Since(start)) }()
+	defer func() { log.Println("load the TablesTree , consumption of time:", time.Since(start)) }()
 	// 获取各层文件大小
 	cfg := config.GetConfig()
 	levelMaxSize = make([]int, 10)
 	levelMaxSize[0] = cfg.Level0Size
 	for i := 1; i < 10; i++ {
-		levelMaxSize[i] = levelMaxSize[i-1] * 10
+		levelMaxSize[i] = levelMaxSize[i-1] << 2
 	}
 	// 加载各层 db 文件
 	tt.levels = make([]*tableNode, cfg.PartSize)
@@ -103,7 +102,7 @@ func (tt *TablesTree) Init(dir string) {
 func (tt *TablesTree) loadDBFile(path string) {
 	start := time.Now()
 	defer func() {
-		log.Printf("finish loading the %s, consumption of time: %v", path, time.Since(start))
+		log.Printf("load the %s, consumption of time: %v", path, time.Since(start))
 	}()
 	// 获取 db 对应的 level 和 index 信息
 	level, index, err := getSsTableInfo(filepath.Base(path))
@@ -169,8 +168,8 @@ func (tt *TablesTree) CreateTable(values []kv.Data, level int) *SsTable {
 
 	index := tt.Insert(table, level)
 	log.Printf("create a new SsTable, level: %d, index: %d\n", level, index)
-	con := config.GetConfig()
-	filePath := con.DataDir + "/" + strconv.Itoa(level) + "." + strconv.Itoa(index) + ".db"
+	cfg := config.GetConfig()
+	filePath := cfg.DataDir + "/" + strconv.Itoa(level) + "." + strconv.Itoa(index) + ".db"
 	table.filepath = filePath
 
 	writeDataToFile(filePath, dataArea, indexArea, meta)

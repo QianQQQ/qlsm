@@ -87,6 +87,7 @@ func (sl *SL) Set(key string, value []byte) (oldValue kv.Data, hasOld bool) {
 	if curr != nil && curr.KV.Key == key {
 		if curr.KV.Deleted {
 			curr.KV.Deleted = false
+			curr.KV.Value = value
 			return kv.Data{}, false
 		} else {
 			oldValue = *curr.KV.Copy()
@@ -129,6 +130,7 @@ func (sl *SL) Delete(key string) (oldValue kv.Data, hasOld bool) {
 		if curr.KV.Deleted {
 			return kv.Data{}, false
 		} else {
+			curr.KV.Value = nil
 			curr.KV.Deleted = true
 			return *curr.KV.Copy(), true
 		}
@@ -158,6 +160,17 @@ func (sl *SL) GetValues() (values []kv.Data) {
 		curr = curr.forward[0]
 	}
 	return values
+}
+
+func (sl *SL) Reset() {
+	sl.Lock()
+	defer sl.Unlock()
+	sl.count = 0
+	sl.level = 0
+	sl.head = &Node{
+		KV:      kv.Data{Key: "", Value: nil, Deleted: true},
+		forward: make([]*Node, maxLevel),
+	}
 }
 
 func (sl *SL) Swap() memTable.MemTable {

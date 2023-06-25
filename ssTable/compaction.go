@@ -16,7 +16,7 @@ func (tt *TablesTree) Compaction() {
 	for levelIndex := range tt.levels {
 		// 转为 MB
 		tableSize := int(tt.getLevelSize(levelIndex) >> 20)
-		// 如果 db 文件数量 > PartSize 或者 该层 db 文件 总大小 > levelMaxSize, 触发对应层的 compaction
+		// 如果 db 文件数量 > PartSize 或者 db 文件总大小 > levelMaxSize, 触发对应层的 compaction
 		if tt.getCount(levelIndex) >= cfg.PartSize || tableSize >= levelMaxSize[levelIndex] {
 			log.Printf("compress level %d Sstables, the tableSize is %d MB", levelIndex, tableSize)
 			tt.majorCompactionLevel(levelIndex)
@@ -28,7 +28,7 @@ func (tt *TablesTree) Compaction() {
 func (tt *TablesTree) majorCompactionLevel(level int) {
 	start := time.Now()
 	defer func() {
-		log.Println("completed compression, consumption of time", time.Since(start))
+		log.Println("completed compressing, consumption of time", time.Since(start))
 	}()
 
 	curr := tt.levels[level]
@@ -41,11 +41,11 @@ func (tt *TablesTree) majorCompactionLevel(level int) {
 		data := make([]byte, t.metaInfo.dataLen)
 		// 读取 SsTable 的数据区
 		if _, err := t.f.Seek(0, 0); err != nil {
-			log.Println("fail to open file ", t.filepath)
+			log.Println("fail to open file", t.filepath)
 			panic(err)
 		}
 		if _, err := t.f.Read(data); err != nil {
-			log.Println("fail to read file ", t.filepath)
+			log.Println("fail to read file", t.filepath)
 			panic(err)
 		}
 		// 读取每一个元素

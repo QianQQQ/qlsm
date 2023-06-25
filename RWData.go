@@ -8,6 +8,8 @@ import (
 
 // Get 获取一个元素
 func Get[T any](key string) (ans T, ok bool) {
+	db.Lock()
+	defer db.Unlock()
 	//log.Printf("Get %s", key)
 	// 先查内存表
 	value, result := db.MemTable.Search(key)
@@ -32,6 +34,8 @@ func Get[T any](key string) (ans T, ok bool) {
 
 // Set 插入元素
 func Set[T any](key string, value T) bool {
+	db.Lock()
+	defer db.Unlock()
 	//log.Printf("Insert %s", key)
 	data, err := json.Marshal(value)
 	if err != nil {
@@ -48,25 +52,10 @@ func Set[T any](key string, value T) bool {
 	return true
 }
 
-// DeleteAndGet 删除元素并尝试获取旧的值
-func DeleteAndGet[T any](key string) (T, bool) {
-	//log.Printf("Delete %s", key)
-	value, success := db.MemTable.Delete(key)
-	if success {
-		// 写入 wal.log
-		db.Wal.Write(kv.Data{
-			Key:     key,
-			Value:   nil,
-			Deleted: true,
-		})
-		return getInstance[T](value.Value)
-	}
-	var nilV T
-	return nilV, false
-}
-
 // Delete 删除元素
 func Delete(key string) {
+	db.Lock()
+	defer db.Unlock()
 	//log.Printf("Delete %s", key)
 	db.MemTable.Delete(key)
 	db.Wal.Write(kv.Data{
