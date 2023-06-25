@@ -15,7 +15,7 @@ type DB struct {
 	MemTable   memTable.MemTable
 	TablesTree *ssTable.TablesTree
 	Wal        *wal.Wal
-	sync.Mutex
+	sync.RWMutex
 }
 
 var db *DB

@@ -25,6 +25,7 @@ func (tt *TablesTree) Compaction() {
 }
 
 // 压缩当前层的文件到下一层, 只能被 Compaction() 调用
+// TODO 降低内存开销
 func (tt *TablesTree) majorCompactionLevel(level int) {
 	start := time.Now()
 	defer func() {
@@ -63,21 +64,18 @@ func (tt *TablesTree) majorCompactionLevel(level int) {
 		curr = curr.next
 	}
 	tt.Unlock()
-	// 将 SortTree 压缩合并成一个 SsTable
+	// 将 MemTable 压缩合并成一个 SsTable
 	values := mt.GetValues()
+	// 最多支持 10 层, 不过也不可能到达
 	newLevel := level + 1
-	// 目前最多支持 10 层
 	if newLevel > 10 {
 		newLevel = 10
 	}
 	// 创建新的 SsTable
 	tt.CreateTable(values, newLevel)
-	// 清理该层的文件
-	oldNode := tt.levels[level]
 	// 重置该层
 	if level < 10 {
-		tt.clearLevel(oldNode)
-		tt.levels[level] = nil
+		tt.clearLevel(level)
 	}
 }
 
@@ -91,20 +89,19 @@ func (tt *TablesTree) getCount(level int) int {
 	return count
 }
 
-func (tt *TablesTree) clearLevel(oldNode *tableNode) {
+func (tt *TablesTree) clearLevel(level int) {
 	tt.Lock()
 	defer tt.Unlock()
-	// 清理当前层的每个的 SsTable
+	oldNode := tt.levels[level]
+	// 清理当前层所有 SsTable
 	for oldNode != nil {
 		oldNode.table.Lock()
-		err := oldNode.table.f.Close()
-		if err != nil {
-			log.Println("fail to close file,", oldNode.table.filepath)
+		if err := oldNode.table.f.Close(); err != nil {
+			log.Println("fail to close file", oldNode.table.filepath)
 			panic(err)
 		}
-		err = os.Remove(oldNode.table.filepath)
-		if err != nil {
-			log.Println("fail to delete file,", oldNode.table.filepath)
+		if err := os.Remove(oldNode.table.filepath); err != nil {
+			log.Println("fail to delete file", oldNode.table.filepath)
 			panic(err)
 		}
 		oldNode.table.Unlock()
@@ -112,4 +109,5 @@ func (tt *TablesTree) clearLevel(oldNode *tableNode) {
 		oldNode.table = nil
 		oldNode = oldNode.next
 	}
+	tt.levels[level] = nil
 }

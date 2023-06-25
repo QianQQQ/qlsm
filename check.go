@@ -4,19 +4,19 @@ import (
 	"log"
 	"qlsm/config"
 	"qlsm/memTable/skiplist"
+	"runtime"
 	"time"
 )
 
 func Check() {
 	cfg := config.GetConfig()
-	//checkMemory()
-	//db.TablesTree.Compaction()
 	ticker := time.Tick(time.Duration(cfg.CheckInterval) * time.Millisecond)
 	for range ticker {
 		db.Lock()
 		checkMemory()
 		db.TablesTree.Compaction()
 		db.Unlock()
+		runtime.GC()
 	}
 }
 

@@ -8,8 +8,8 @@ import (
 
 // Get 获取一个元素
 func Get[T any](key string) (ans T, ok bool) {
-	db.Lock()
-	defer db.Unlock()
+	db.RLock()
+	defer db.RUnlock()
 	//log.Printf("Get %s", key)
 	// 先查内存表
 	value, result := db.MemTable.Search(key)
