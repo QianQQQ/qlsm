@@ -10,13 +10,14 @@ import (
 
 func Check() {
 	cfg := config.GetConfig()
-	ticker := time.Tick(time.Duration(cfg.CheckInterval) * time.Millisecond)
-	for range ticker {
+	timer := time.NewTimer(time.Duration(cfg.CheckInterval) * time.Millisecond)
+	for range timer.C {
 		db.Lock()
 		checkMemory()
 		db.TablesTree.Compaction()
 		db.Unlock()
 		runtime.GC()
+		timer.Reset(time.Duration(cfg.CheckInterval) * time.Millisecond)
 	}
 }
 

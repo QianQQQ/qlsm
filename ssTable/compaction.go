@@ -25,7 +25,6 @@ func (tt *TablesTree) Compaction() {
 }
 
 // 压缩当前层的文件到下一层, 只能被 Compaction() 调用
-// TODO 降低内存开销
 func (tt *TablesTree) majorCompactionLevel(level int) {
 	start := time.Now()
 	defer func() {
@@ -33,7 +32,6 @@ func (tt *TablesTree) majorCompactionLevel(level int) {
 	}()
 
 	curr := tt.levels[level]
-
 	// 将当前层的 SsTable 合并到一个 MemTable 中
 	mt := skiplist.New()
 	tt.Lock()
