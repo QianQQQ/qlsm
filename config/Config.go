@@ -6,9 +6,9 @@ import "sync"
 type Config struct {
 	DataDir       string // 数据目录
 	Level0Size    int    // 0 层所有 SsTable 文件大小总和的最大值 (MB)
-	PartSize      int    // 每层 SsTable 数量的最大值阈值
+	PartSize      int    // 每层 SsTable 数量的最大值
 	Threshold     int    // MemTable 中 kv 最大数量
-	CheckInterval int    // 检查 compaction 的时间间隔 (ms)
+	CheckInterval int    // 监控协程检查的时间间隔 (ms)
 }
 
 var config Config

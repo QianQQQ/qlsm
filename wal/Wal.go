@@ -20,6 +20,7 @@ type Wal struct {
 	sync.Mutex
 }
 
+// GetSize 获取 Wal大小, 单位字节
 func (w *Wal) GetSize() int64 {
 	info, err := w.f.Stat()
 	if err != nil {
@@ -96,6 +97,7 @@ func (w *Wal) Load(dir string) memTable.MemTable {
 	return t
 }
 
+// Write 将数组增加、修改和删除操作写入Wal
 func (w *Wal) Write(value kv.Data) {
 	w.Lock()
 	defer w.Unlock()
@@ -114,13 +116,6 @@ func (w *Wal) Write(value kv.Data) {
 func (w *Wal) Reset() {
 	w.Lock()
 	defer w.Unlock()
-	//log.Println("reset the wal.log...")
-	//if _, err := w.f.Seek(0, 0); err != nil {
-	//	log.Panicln(err)
-	//}
-	//if err := w.f.Truncate(0); err != nil {
-	//	log.Panicln(err)
-	//}
 	if err := w.f.Close(); err != nil {
 		log.Panicln(err)
 	}

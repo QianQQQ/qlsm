@@ -15,6 +15,7 @@ type Data struct {
 	Deleted bool
 }
 
+// Copy 返回 Data 的一个复制
 func (d *Data) Copy() *Data {
 	return &Data{
 		Key:     d.Key,
